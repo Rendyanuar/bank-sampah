@@ -26,40 +26,58 @@ $d_saldo_admin = mysqli_fetch_assoc($q_saldo_admin);
 $saldo_admin_saat_ini = ($d_saldo_admin['saldo'] !== null) ? $d_saldo_admin['saldo'] : 0;
 
 // ==================================================================
-// 1. PROSES EDIT BERAT (KG) - OTOMATIS HITUNG ULANG
+// 1. PROSES EDIT BERAT (KG) - OTOMATIS HITUNG ULANG (ANTI-ERROR)
 // ==================================================================
 if (isset($_POST['proses_edit_berat'])) {
     $id_trans = mysqli_real_escape_string($koneksi, $_POST['id_transaksi']);
-    $berat_baru = (float)$_POST['berat_baru'];
+    
+    // Konversi koma ke titik agar aman dibaca sistem desimal database
+    $berat_baru_raw = str_replace(',', '.', $_POST['berat_baru']);
+    $berat_baru = (float)$berat_baru_raw;
 
     if ($berat_baru <= 0) {
-        $notif_gagal = "Gagal! Berat (Kg) harus lebih dari 0.";
+        $notif_gagal = "Gagal! Berat (Kg) harus lebih besar dari 0.";
     } else {
-        // Ambil data transaksi lama dan harga/kg saat ini
-        $q_old = mysqli_query($koneksi, "SELECT ts.*, k.harga FROM transaksi_setoran ts JOIN kategori_sampah k ON ts.id_kategori = k.id WHERE ts.id = '$id_trans'");
-        $d_old = mysqli_fetch_assoc($q_old);
-        
-        $status_sekarang = $d_old['status'];
-        $harga_per_kg = $d_old['harga'];
-        $total_lama = $d_old['total_harga'];
-        $uname_nasabah = $d_old['username_nasabah'];
-        
-        // Rumus hitung otomatis
-        $total_baru = $berat_baru * $harga_per_kg;
-        $selisih = $total_baru - $total_lama;
+        // Ambil data transaksi lama
+        $q_ts = mysqli_query($koneksi, "SELECT * FROM transaksi_setoran WHERE id = '$id_trans'");
+        if ($q_ts && mysqli_num_rows($q_ts) > 0) {
+            $d_old = mysqli_fetch_assoc($q_ts);
+            $id_kat = $d_old['id_kategori'];
+            $status_sekarang = $d_old['status'];
+            $total_lama = (int)$d_old['total_harga'];
+            $uname_nasabah = $d_old['username_nasabah'];
 
-        $q_upd = "UPDATE transaksi_setoran SET berat = '$berat_baru', total_harga = '$total_baru' WHERE id = '$id_trans'";
-        
-        if (mysqli_query($koneksi, $q_upd)) {
-            // Jika transaksi sudah selesai, sinkronkan saldonya agar tidak bocor
-            if ($status_sekarang == 'selesai') {
-                mysqli_query($koneksi, "UPDATE users SET saldo = saldo + $selisih WHERE username = '$uname_nasabah' AND role='nasabah'");
-                mysqli_query($koneksi, "UPDATE users SET saldo = saldo - $selisih WHERE role = 'admin'");
-                $saldo_admin_saat_ini -= $selisih; // Update tampilan saldo di layar
+            // Ambil harga dari kategori sampah (Otomatis melacak variasi nama kolom harga)
+            $q_kat = mysqli_query($koneksi, "SELECT * FROM kategori_sampah WHERE id = '$id_kat'");
+            $d_kat = mysqli_fetch_assoc($q_kat);
+            
+            $harga_per_kg = 0;
+            if(isset($d_kat['harga_barang'])) { 
+            $harga_per_kg = $d_kat['harga_barang']; }
+            
+            if ($harga_per_kg > 0) {
+                // Kalkulasi nominal baru dan selisihnya
+                $total_baru = $berat_baru * $harga_per_kg;
+                $selisih = $total_baru - $total_lama;
+
+                $q_upd = "UPDATE transaksi_setoran SET berat = '$berat_baru', total_harga = '$total_baru' WHERE id = '$id_trans'";
+                
+                if (mysqli_query($koneksi, $q_upd)) {
+                    // Sinkronisasi saldo hanya berjalan jika status transaksi sudah 'selesai'
+                    if ($status_sekarang == 'selesai') {
+                        mysqli_query($koneksi, "UPDATE users SET saldo = saldo + $selisih WHERE username = '$uname_nasabah' AND role='nasabah'");
+                        mysqli_query($koneksi, "UPDATE users SET saldo = saldo - $selisih WHERE role = 'admin'");
+                        $saldo_admin_saat_ini -= $selisih; 
+                    }
+                    $notif_sukses = "Sukses! Timbangan diubah ke $berat_baru Kg. Harga otomatis disesuaikan menjadi Rp " . number_format($total_baru, 0, ',', '.');
+                } else {
+                    $notif_gagal = "Gagal memperbarui database: " . mysqli_error($koneksi);
+                }
+            } else {
+                $notif_gagal = "Gagal! Tidak dapat menemukan harga dasar di database Kategori Sampah.";
             }
-            $notif_sukses = "Berat berhasil disesuaikan menjadi $berat_baru Kg! Total harga dihitung ulang otomatis menjadi Rp " . number_format($total_baru, 0, ',', '.');
         } else {
-            $notif_gagal = "Gagal memperbarui data berat: " . mysqli_error($koneksi);
+            $notif_gagal = "Gagal! Data transaksi setoran tidak ditemukan.";
         }
     }
 }
@@ -72,7 +90,6 @@ if (isset($_GET['aksi']) && isset($_GET['id'])) {
     $aksi = $_GET['aksi'];
 
     if ($aksi == 'setujui') {
-        // Hanya mengubah status jadi disetujui, belum potong saldo
         $query_status = "UPDATE transaksi_setoran SET status = 'disetujui' WHERE id = '$id_transaksi'";
         if (mysqli_query($koneksi, $query_status)) {
             $notif_sukses = "Setoran berhasil disetujui! Lanjutkan ke tahap 'Selesai' untuk memotong saldo kas dan menyelesaikan transaksi.";
@@ -83,7 +100,6 @@ if (isset($_GET['aksi']) && isset($_GET['id'])) {
             $notif_sukses = "Setoran nasabah telah ditolak.";
         }
     } elseif ($aksi == 'selesai') {
-        // TAHAP FINAL: Memotong saldo admin dan menambah saldo nasabah
         $q_trans = mysqli_query($koneksi, "SELECT total_harga, username_nasabah, status FROM transaksi_setoran WHERE id = '$id_transaksi'");
         $d_trans = mysqli_fetch_assoc($q_trans);
         
@@ -91,7 +107,6 @@ if (isset($_GET['aksi']) && isset($_GET['id'])) {
             $total_harga = $d_trans['total_harga'];
             $user_nasabah = $d_trans['username_nasabah'];
             
-            // Cek sekali lagi apakah saldo admin cukup (Pencegahan Error Server)
             if ($saldo_admin_saat_ini >= $total_harga) {
                 mysqli_query($koneksi, "UPDATE users SET saldo = saldo - $total_harga WHERE role = 'admin'");
                 mysqli_query($koneksi, "UPDATE users SET saldo = COALESCE(saldo, 0) + $total_harga WHERE username = '$user_nasabah' AND role = 'nasabah'");
@@ -106,9 +121,7 @@ if (isset($_GET['aksi']) && isset($_GET['id'])) {
     }
 }
 
-// =========================================================
-// MENGHITUNG ANGKA NOTIFIKASI UNTUK SIDEBAR
-// =========================================================
+// SINKRONISASI HITUNG ANGKA MERAH BADGE NOTIFIKASI SIDEBAR
 $q_notif_setoran = mysqli_query($koneksi, "SELECT COUNT(*) as total FROM transaksi_setoran WHERE status = 'pending'");
 $notif_setoran = mysqli_fetch_assoc($q_notif_setoran)['total'];
 
@@ -126,9 +139,7 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
     <style>
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; display: flex; height: 100vh; overflow: hidden; }
         
-        /* =========================================
-           1. SIDEBAR SAMA PERSIS DENGAN DASHBOARD
-           ========================================= */
+        /* Sidebar Styling (Sesuai Dashboard Admin) */
         .sidebar { width: 85px; background-color: #2c3e50; color: white; display: flex; flex-direction: column; z-index: 1001;}
         .sidebar h2 { margin: 0; background-color: #1abc9c; font-size: 24px; cursor: default; white-space: nowrap; height: 60px; display: flex; align-items: center; justify-content: center; box-sizing: border-box;}
         .sidebar-logo-text { display: none; }
@@ -143,14 +154,13 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
 
         .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
         
-        /* =========================================
-           2. HEADER SAMA PERSIS DENGAN DASHBOARD
-           ========================================= */
+        /* Header Styling */
         .header { background-color: #1abc9c; padding: 0 30px; height: 60px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; box-sizing: border-box;}
         .header h3 { margin: 0; color: white; display: flex; align-items: center; gap: 10px; font-size: 18px; }
         .mobile-menu-btn { display: none; font-size: 20px; color: white; cursor: pointer; }
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; }
         
+        /* Dropdown Profil */
         .header-right { display: flex; align-items: center; }
         .profile-dropdown { position: relative; display: inline-block; }
         .profile-dropdown-toggle { display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: 20px; transition: 0.3s; cursor: pointer; user-select: none; }
@@ -173,6 +183,7 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
         .card-header { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee;}
         .card-header h2 { margin: 0; color: #1abc9c; font-size: 22px;}
         
+        /* Tabel responsive */
         .table-responsive { width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: block; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; min-width: 900px; white-space: nowrap;}
         table th, table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; vertical-align: middle; }
@@ -187,9 +198,9 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
         .badge-disetujui { background-color: #3498db; }  
         .badge-selesai { background-color: #2ecc71; }    
         .badge-ditolak { background-color: #e74c3c; }    
-        .badge-dibatalkan { background-color: #95a5a6; } /* Warna khusus Dibatalkan */
+        .badge-dibatalkan { background-color: #95a5a6; }
 
-        /* Tombol Aksi */
+        /* Tombol Layout */
         .btn-approve { background-color: #2ecc71; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 13px; font-weight: bold; transition: 0.2s; display: block; text-align: center; width: 100%; box-sizing: border-box;}
         .btn-approve:hover { background-color: #27ae60; }
         .btn-reject { background-color: #e74c3c; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 13px; font-weight: bold; transition: 0.2s; display: block; text-align: center; width: 100%; box-sizing: border-box;}
@@ -199,10 +210,9 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
         .btn-edit-berat { background-color: #f39c12; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 13px; font-weight: bold; transition: 0.2s; display: block; text-align: center; width: 100%; box-sizing: border-box; }
         .btn-edit-berat:hover { background-color: #e67e22; }
 
-        /* Wrapper Tumpukan Tombol */
         .action-buttons-stack { display: flex; flex-direction: column; gap: 8px; width: 100px; margin: 0 auto; }
 
-        /* Modal Global */
+        /* Modal Structure */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.6); z-index: 9999; justify-content: center; align-items: center; }
         .modal-box { background: #fff; width: 380px; border-radius: 16px; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.4); text-align: center; animation: popIn 0.3s ease-out; }
         .modal-header-green { background: linear-gradient(135deg, #1abc9c 0%, #16a085 100%); padding: 25px 20px; color: white; }
@@ -224,19 +234,19 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
 
         @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
-        /* Info Box Dalam Modal */
         .info-box { background: #f8f9fa; border: 1px solid #eee; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: left; }
         .info-box p { margin: 0 0 8px 0; font-size: 14px; color: #7f8c8d; }
         .info-box p:last-child { margin-bottom: 0; }
         .info-box strong { font-size: 18px; display: block; margin-top: 3px; }
 
-        /* Modal Lightbox Foto */
+        /* Lightbox CSS */
         #lightboxModal { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); z-index: 10000;}
         .lightbox-content { position: relative; max-width: 90%; max-height: 90vh; display: flex; flex-direction: column; align-items: center; justify-content: center; animation: popIn 0.3s ease-out;}
         .lightbox-content img { max-width: 100%; max-height: 75vh; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: contain; background: white; padding: 10px;}
         .btn-kembali-foto { margin-top: 20px; background: #e74c3c; color: white; border: none; padding: 12px 30px; border-radius: 25px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(231,76,60,0.3); transition: 0.2s; }
         .btn-kembali-foto:hover { background: #c0392b; transform: translateY(-2px); }
 
+        /* RESPONSIVE MOBILE */
         @media screen and (max-width: 768px) {
             .mobile-menu-btn { display: block; }
             .header { padding: 0 20px; }
@@ -263,24 +273,24 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
     <div class="sidebar" id="sidebarMenu">
         <h2 title="Bank Sampah"><i class="fa fa-recycle"></i><span class="sidebar-logo-text">BANK SAMPAH</span></h2>
         <div class="menu">
-            <a href="dashboard_admin.php">
+            <a href="dashboard_admin.php" title="Dashboard">
                 <i class="fa fa-home"></i><span class="menu-text">Beranda</span>
             </a>
-            <a href="data_nasabah.php">
+            <a href="data_nasabah.php" title="Data Nasabah">
                 <i class="fa fa-users"></i><span class="menu-text">Nasabah</span>
             </a>
-            <a href="kategori_sampah.php">
+            <a href="kategori_sampah.php" title="Kategori Sampah">
                 <i class="fa fa-trash"></i><span class="menu-text">Kategori</span>
             </a>
-            <a href="transaksi_setoran.php" class="active">
+            <a href="transaksi_setoran.php" class="active" title="Transaksi Setoran">
                 <i class="fa fa-exchange-alt"></i><span class="menu-text">Setoran</span>
                 <?php if($notif_setoran > 0) echo "<span class='notif-badge'>$notif_setoran</span>"; ?>
             </a>
-            <a href="transaksi_tarik.php">
+            <a href="transaksi_tarik.php" title="Pencairan Saldo">
                 <i class="fa fa-hand-holding-usd"></i><span class="menu-text">Pencairan</span>
                 <?php if($notif_tarik > 0) echo "<span class='notif-badge'>$notif_tarik</span>"; ?>
             </a>
-            <a style="cursor: pointer;" onclick="showLogoutModal()">
+            <a style="cursor: pointer;" onclick="showLogoutModal()" title="Logout">
                 <i class="fa fa-sign-out-alt"></i><span class="menu-text">Keluar</span>
             </a>
         </div>
@@ -362,7 +372,7 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
 
                                     echo "<td style='font-weight:bold; color:#2e7d32; white-space: nowrap;'>Rp " . number_format($row['total_harga'], 0, ',', '.') . "</td>";
                                     
-                                    // LOGIKA STATUS DENGAN KONDISI "DIBATALKAN"
+                                    // LOGIKA STATUS
                                     $status_sekarang = strtolower($row['status']);
                                     if ($status_sekarang == 'selesai') {
                                         $badge_class = 'badge-selesai'; $status_text = 'Selesai';
@@ -391,14 +401,14 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
                                         echo "<a href='transaksi_setoran.php?aksi=setujui&id=$id_js' class='btn-approve'><i class='fa fa-check'></i> Setujui</a>";
                                         echo "<a href='transaksi_setoran.php?aksi=tolak&id=$id_js' class='btn-reject'><i class='fa fa-times'></i> Tolak</a>";
                                     } elseif ($status_sekarang == 'disetujui') {
-                                        echo "<button onclick='showVerifikasiModal($id_js, " . $row['total_harga'] . ")' class='btn-selesai'><i class='fa fa-flag-checkered'></i> Selesai</button>";
+                                        echo "<button type='button' onclick='showVerifikasiModal($id_js, " . $row['total_harga'] . ")' class='btn-selesai'><i class='fa fa-flag-checkered'></i> Selesai</button>";
                                     } else {
                                         echo "<span style='color:#95a5a6; font-size:12px; font-style:italic;'><i class='fa fa-lock'></i> Terkunci</span>";
                                     }
 
                                     // Tombol Edit Kg (Bisa ditekan kapan saja kecuali sudah Ditolak / Dibatalkan)
                                     if ($status_sekarang != 'ditolak' && $status_sekarang != 'dibatalkan') {
-                                        echo "<button onclick='showEditBeratModal($id_js, \"$nama_js\", \"$barang_js\", \"$berat_raw\")' class='btn-edit-berat'><i class='fa fa-weight-hanging'></i> Edit Kg</button>";
+                                        echo "<button type='button' onclick='showEditBeratModal($id_js, \"$nama_js\", \"$barang_js\", \"$berat_raw\")' class='btn-edit-berat'><i class='fa fa-weight-hanging'></i> Edit Kg</button>";
                                     }
                                     
                                     echo "</div>";
@@ -428,7 +438,7 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
                     <p>Kategori: <strong style="color: #333;" id="eb_barang"></strong></p>
                     <p>Berat Sebelumnya: <strong style="color: #e67e22;" id="eb_berat_lama"></strong></p>
                 </div>
-                <form action="" method="POST">
+                <form action="transaksi_setoran.php" method="POST">
                     <input type="hidden" name="id_transaksi" id="eb_id">
                     <div style="text-align: left; margin-bottom: 15px;">
                         <label style="display: block; font-size: 13px; color: #555; margin-bottom: 5px; font-weight: bold;">Berat Aktual / Riil (Kg)</label>
@@ -533,7 +543,6 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
         }
     }
 
-    // Modal Foto Lightbox
     function bukaFotoLayarPenuh(urlGambar) {
         document.getElementById('imgLayarPenuh').src = urlGambar;
         document.getElementById('lightboxModal').style.display = 'flex';
@@ -543,7 +552,6 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
         document.getElementById('imgLayarPenuh').src = '';
     }
 
-    // Modal Edit Berat
     function showEditBeratModal(id, nama, barang, beratLama) {
         document.getElementById('eb_id').value = id;
         document.getElementById('eb_nama').innerText = nama;
@@ -556,7 +564,6 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
         document.getElementById('editBeratModal').style.display = 'none';
     }
 
-    // Modal Selesai / Verifikasi
     let idTransaksiAktif = "";
     let saldoAdminJS = <?php echo $saldo_admin_saat_ini; ?>;
 
@@ -590,7 +597,7 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
     
     function tutupNotif() {
         document.getElementById('notifModal').style.display = 'none';
-        window.location.href = window.location.pathname;
+        window.location.href = window.location.pathname; 
     }
 
     if ( window.history.replaceState ) {

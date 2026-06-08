@@ -188,6 +188,7 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
         .badge-disetujui { background-color: #3498db; } 
         .badge-selesai { background-color: #2ecc71; } 
         .badge-ditolak { background-color: #e74c3c; } 
+        .badge-dibatalkan { background-color: #95a5a6; } /* TAMBAHAN UNTUK DIBATALKAN NASABAH */
 
         .tools-group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap;}
         
@@ -343,10 +344,8 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
                 </a>
             </div>
 
-            <!-- KOTAK GABUNGAN: RASIO & TRANSAKSI SETORAN TERBARU -->
             <div class="card-table">
                 
-                <!-- BAGIAN 1: RASIO SAMPAH TERKUMPUL -->
                 <div class="card-table-header">
                     <h3><i class="fa fa-chart-pie"></i> Rasio Sampah Terkumpul</h3>
                     <div class="tools-group">
@@ -398,7 +397,6 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
 
                 <hr style="border: 0; border-top: 1px dashed #ccc; margin: 30px 0;">
 
-                <!-- BAGIAN 2: TRANSAKSI SETORAN TERBARU -->
                 <div class="card-table-header">
                     <h3><i class="fa fa-list"></i> Transaksi Setoran Terbaru</h3>
                     <button class="btn-export" style="background:#27ae60;" onclick="exportTableToExcel('tabelSetoran', 'Laporan_Setoran_Sampah')">
@@ -438,14 +436,18 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
                                     echo "<td>" . $row['berat'] . " Kg</td>";
                                     echo "<td style='color:#2e7d32; font-weight:bold;'>Rp " . number_format($row['total_harga'], 0, ',', '.') . "</td>";
                                     
-                                    if ($row['status'] == 'selesai') {
+                                    // SINKRONISASI PEMBACAAN LOGIKA BADGE STATUS (DIBATALKAN NASABAH)
+                                    $status_sekarang = strtolower(trim($row['status']));
+                                    if ($status_sekarang == 'selesai') {
                                         $badge_class = 'badge-selesai'; $status_text = 'Selesai';
-                                    } elseif ($row['status'] == 'disetujui') {
+                                    } elseif ($status_sekarang == 'disetujui') {
                                         $badge_class = 'badge-disetujui'; $status_text = 'Disetujui';
-                                    } elseif ($row['status'] == 'ditolak') {
-                                        $badge_class = 'badge-ditolak'; $status_text = 'Ditolak';
+                                    } elseif ($status_sekarang == 'ditolak') {
+                                        $badge_class = 'badge-ditolak'; $status_text = 'Ditolak Admin';
+                                    } elseif ($status_sekarang == 'dibatalkan') {
+                                        $badge_class = 'badge-dibatalkan'; $status_text = 'Dibatalkan Nasabah';
                                     } else {
-                                        $badge_class = 'badge-pending'; $status_text = 'Minta Persetujuan';
+                                        $badge_class = 'badge-pending'; $status_text = 'Menunggu';
                                     }
 
                                     echo "<td><span class='badge $badge_class'>" . $status_text . "</span></td>";
@@ -473,7 +475,6 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
 
             </div>
 
-            <!-- LAPORAN PENGELUARAN DANA KAS DENGAN SEARCH (EXCEL) -->
             <div class="card-table">
                 <div class="card-table-header">
                     <h3><i class="fa fa-file-invoice-dollar"></i> Laporan Pengeluaran Dana Kas</h3>
@@ -532,7 +533,6 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
         </div>
     </div>
 
-    <!-- MODAL RESET DATA -->
     <div id="resetModal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-header-danger">
@@ -551,7 +551,6 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
         </div>
     </div>
 
-    <!-- MODAL NOTIFIKASI -->
     <?php if (!empty($notif_sukses) || !empty($notif_gagal)) : ?>
     <div id="notifModal" class="modal-overlay" style="display: flex;">
         <div class="modal-box">
@@ -567,7 +566,6 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
     </div>
     <?php endif; ?>
 
-    <!-- MODAL LOGOUT -->
     <div id="customModal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-header">
