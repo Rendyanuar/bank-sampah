@@ -215,6 +215,10 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
         /* Modal Structure */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.6); z-index: 9999; justify-content: center; align-items: center; }
         .modal-box { background: #fff; width: 380px; border-radius: 16px; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.4); text-align: center; animation: popIn 0.3s ease-out; }
+        
+        /* KELAS KHUSUS MODAL MUNGIL (VERIFIKASI, NOTIF, LOGOUT) */
+        .modal-box-small { width: 320px !important; margin: 0 auto;}
+
         .modal-header-green { background: linear-gradient(135deg, #1abc9c 0%, #16a085 100%); padding: 25px 20px; color: white; }
         .modal-header-blue { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); padding: 25px 20px; color: white; }
         .modal-header-red { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); padding: 25px 20px; color: white; }
@@ -229,6 +233,8 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
         .btn-confirm-green:hover { background: #12876f; }
         .btn-confirm-blue { background: #3498db; color: white; padding: 12px 20px; border: none; border-radius: 25px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; flex: 1;}
         .btn-confirm-blue:hover { background: #2980b9; }
+        .btn-confirm-red { background: #e74c3c; color: white; padding: 12px 20px; border: none; border-radius: 25px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; flex: 1;}
+        .btn-confirm-red:hover { background: #c0392b; }
         .btn-cancel { background: #ecf0f1; color: #7f8c8d; padding: 12px 20px; border: none; border-radius: 25px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; flex: 1;}
         .btn-cancel:hover { background: #bdc3c7; }
 
@@ -263,6 +269,20 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
             .card { padding: 20px; width: 100%; max-width: calc(100vw - 30px); }
             .table-responsive { overflow-x: auto !important; margin-top: 10px; border: 1px solid #f1f1f1; }
             .modal-box { width: 92%; max-width: 380px; }
+            
+            /* Penyesuaian Modal Mungil di HP */
+            .modal-box-small { max-width: 280px !important; border-radius: 12px; }
+            .modal-box-small .modal-header-green, .modal-box-small .modal-header-red, .modal-box-small .modal-header-blue { padding: 15px; }
+            .modal-box-small .modal-header-green i, .modal-box-small .modal-header-red i, .modal-box-small .modal-header-blue i { font-size: 40px; }
+            .modal-box-small .modal-header-red img { width: 60px; }
+            .modal-box-small .modal-body { padding: 15px 20px 20px 20px; }
+            .modal-box-small .modal-body h3 { font-size: 18px; margin-bottom: 8px;}
+            .modal-box-small .modal-body p { font-size: 13px; margin-bottom: 15px; line-height: 1.4; }
+            .modal-box-small .info-box { padding: 12px; margin-bottom: 15px; }
+            .modal-box-small .info-box p { font-size: 12px; margin-bottom: 5px; }
+            .modal-box-small .info-box strong { font-size: 14px; }
+            .modal-box-small .modal-buttons { gap: 8px; }
+            .modal-box-small .modal-buttons button { padding: 10px; font-size: 12px; }
         }
     </style>
 </head>
@@ -464,7 +484,7 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
     </div>
 
     <div id="verifikasiModal" class="modal-overlay">
-        <div class="modal-box">
+        <div class="modal-box modal-box-small">
             <div class="modal-header-blue">
                 <i class="fa fa-info-circle"></i>
             </div>
@@ -490,7 +510,7 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
     </div>
 
     <div id="logoutModal" class="modal-overlay">
-        <div class="modal-box">
+        <div class="modal-box modal-box-small">
             <div class="modal-header-red" style="background: #e74c3c;">
                 <img src="assets/logo-lebak.png" alt="Logo Instansi">
             </div>
@@ -499,7 +519,7 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
                 <p>Apakah Anda yakin ingin keluar dari sistem?</p>
                 <div class="modal-buttons">
                     <button class="btn-cancel" onclick="closeLogoutModal()">Batal</button>
-                    <button class="btn-confirm-red" style="background:#e74c3c;" onclick="window.location.href='logout.php'">Ya, Keluar</button>
+                    <button class="btn-confirm-red" onclick="window.location.href='logout.php'">Ya, Keluar</button>
                 </div>
             </div>
         </div>
@@ -507,7 +527,7 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
 
     <?php if (!empty($notif_sukses) || !empty($notif_gagal)) : ?>
     <div id="notifModal" class="modal-overlay" style="display: flex;">
-        <div class="modal-box">
+        <div class="modal-box modal-box-small">
             <div class="<?php echo !empty($notif_sukses) ? 'modal-header-green' : 'modal-header-red'; ?>">
                 <i class="<?php echo !empty($notif_sukses) ? 'fa fa-check-circle' : 'fa fa-times-circle'; ?>"></i>
             </div>
@@ -597,7 +617,8 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
     
     function tutupNotif() {
         document.getElementById('notifModal').style.display = 'none';
-        window.location.href = window.location.pathname; 
+        var clean_url = window.location.pathname;
+        setTimeout(function() { window.location.href = clean_url; }, 100);
     }
 
     if ( window.history.replaceState ) {
