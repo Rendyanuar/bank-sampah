@@ -76,6 +76,19 @@ if (isset($_POST['kurangi_saldo'])) {
     }
 }
 
+// ==================================================================
+// 3. PROSES JIKA TOMBOL "RESET DATA" DITEKAN (FITUR BARU)
+// ==================================================================
+if (isset($_POST['reset_kas'])) {
+    $hapus = mysqli_query($koneksi, "DELETE FROM riwayat_kas_admin");
+    mysqli_query($koneksi, "ALTER TABLE riwayat_kas_admin AUTO_INCREMENT = 1"); // Reset ID kembali ke 1
+    if ($hapus) {
+        $pesan_sukses = "Berhasil! Seluruh data riwayat arus kas telah dihapus.";
+    } else {
+        $pesan_error = "Gagal menghapus data riwayat kas.";
+    }
+}
+
 // =========================================================
 // MENGHITUNG DATA PENDING UNTUK NOTIFIKASI SIDEBAR
 // =========================================================
@@ -95,6 +108,18 @@ $saldo_saat_ini = $data_admin['saldo'] !== null ? $data_admin['saldo'] : 0;
 $path_foto_header = (!empty($data_admin['foto_profil']) && file_exists('assets/profil/' . $data_admin['foto_profil'])) 
                     ? 'assets/profil/' . $data_admin['foto_profil'] 
                     : 'https://ui-avatars.com/api/?name=' . urlencode($_SESSION['nama']) . '&background=1abc9c&color=fff';
+
+// =========================================================
+// LOGIKA PAGINATION (HALAMAN) UNTUK RIWAYAT KAS
+// =========================================================
+$batas = 10; // Menampilkan 10 data per halaman
+$halaman = isset($_GET['halaman']) ? (int)$_GET['halaman'] : 1;
+$halaman_awal = ($halaman > 1) ? ($halaman * $batas) - $batas : 0;
+
+$q_total_riwayat = mysqli_query($koneksi, "SELECT id FROM riwayat_kas_admin");
+$jumlah_data_riwayat = mysqli_num_rows($q_total_riwayat);
+$total_halaman = ceil($jumlah_data_riwayat / $batas);
+if ($total_halaman == 0) $total_halaman = 1; // Mencegah 1/0
 ?>
 
 <!DOCTYPE html>
@@ -155,8 +180,10 @@ $path_foto_header = (!empty($data_admin['foto_profil']) && file_exists('assets/p
         .btn-kas-red { background: #e74c3c; }
         .btn-kas-red:hover { background: #c0392b; transform: translateY(-2px);}
 
+        /* PERBAIKAN STRUKTUR CSS TAMBAHAN (HAPUS & PAGINATION) */
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; flex-wrap: wrap; gap:10px;}
         .card-header h2 { margin: 0; color: #1abc9c; font-size: 20px;}
+        .tools-group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap;}
         
         .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px;}
         .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;}
@@ -164,6 +191,8 @@ $path_foto_header = (!empty($data_admin['foto_profil']) && file_exists('assets/p
 
         .btn-export { background-color: #27ae60; color: white; padding: 8px 15px; border-radius: 5px; border:none; cursor:pointer; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 5px;}
         .btn-export:hover { background-color: #219150; }
+        .btn-reset { background-color: #e74c3c; color: white; padding: 8px 15px; border-radius: 5px; border:none; cursor:pointer; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 5px;}
+        .btn-reset:hover { background-color: #c0392b; }
 
         .table-responsive { width: 100%; overflow-x: auto; display: block; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; min-width: 700px; white-space: nowrap;}
@@ -174,6 +203,12 @@ $path_foto_header = (!empty($data_admin['foto_profil']) && file_exists('assets/p
         .badge { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; color: white;}
         .badge-masuk { background-color: #2ecc71; }
         .badge-keluar { background-color: #e74c3c; }
+
+        /* CSS PAGINATION SAMA SEPERTI HALAMAN LAIN */
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 20px; }
+        .pagination a { padding: 6px 15px; background: #3498db; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 13px;}
+        .pagination a:hover { background: #2980b9; }
+        .pagination .info-halaman { font-weight: bold; color: #555; font-size: 13px; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.6); z-index: 9999; justify-content: center; align-items: center; }
         .modal-box { background: #fff; width: 320px; border-radius: 16px; overflow: hidden; text-align: center; animation: popIn 0.3s ease-out; }
@@ -276,7 +311,6 @@ $path_foto_header = (!empty($data_admin['foto_profil']) && file_exists('assets/p
                 <div class="alert alert-error"><i class="fa fa-exclamation-triangle"></i> <?php echo $pesan_error; ?></div>
             <?php endif; ?>
 
-            <!-- BAGIAN ATAS: PENGELOLAAN KAS ADMIN -->
             <div class="kas-grid">
                 <div class="saldo-box">
                     <i class="fa fa-vault"></i>
@@ -306,13 +340,17 @@ $path_foto_header = (!empty($data_admin['foto_profil']) && file_exists('assets/p
                 </div>
             </div>
 
-            <!-- BAGIAN BAWAH: RIWAYAT KAS ADMIN -->
             <div class="card">
                 <div class="card-header">
                     <h2><i class="fa fa-history"></i> Riwayat Arus Kas Admin</h2>
-                    <button class="btn-export" onclick="exportTableToExcel('tabelRiwayatKas', 'Riwayat_Kas_Admin')">
-                        <i class="fa fa-file-excel"></i> Export ke Excel
-                    </button>
+                    <div class="tools-group">
+                        <button class="btn-reset" onclick="showResetModal()">
+                            <i class="fa fa-trash"></i> Reset Data
+                        </button>
+                        <button class="btn-export" onclick="exportTableToExcel('tabelRiwayatKas', 'Riwayat_Kas_Admin')">
+                            <i class="fa fa-file-excel"></i> Export ke Excel
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="table-responsive">
@@ -328,9 +366,10 @@ $path_foto_header = (!empty($data_admin['foto_profil']) && file_exists('assets/p
                         </thead>
                         <tbody>
                             <?php
-                            $query_riwayat = "SELECT * FROM riwayat_kas_admin ORDER BY tanggal DESC";
+                            // UPDATE: Menambahkan LIMIT $halaman_awal, $batas untuk PAGINATION
+                            $query_riwayat = "SELECT * FROM riwayat_kas_admin ORDER BY tanggal DESC LIMIT $halaman_awal, $batas";
                             $result_riwayat = mysqli_query($koneksi, $query_riwayat);
-                            $no_riwayat = 1;
+                            $no_riwayat = $halaman_awal + 1; // Update nomor urut otomatis
 
                             if (mysqli_num_rows($result_riwayat) > 0) {
                                 while ($row_r = mysqli_fetch_assoc($result_riwayat)) {
@@ -362,11 +401,41 @@ $path_foto_header = (!empty($data_admin['foto_profil']) && file_exists('assets/p
                         </tbody>
                     </table>
                 </div>
+
+                <?php if ($jumlah_data_riwayat > 0): ?>
+                <div class="pagination">
+                    <?php if($halaman > 1): ?>
+                        <a href="?halaman=<?php echo $halaman - 1; ?>"><i class="fa fa-chevron-left"></i> Prev</a>
+                    <?php endif; ?>
+                    <span class="info-halaman">Halaman <?php echo $halaman; ?> / <?php echo $total_halaman; ?></span>
+                    <?php if($halaman < $total_halaman): ?>
+                        <a href="?halaman=<?php echo $halaman + 1; ?>">Next <i class="fa fa-chevron-right"></i></a>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
+
             </div>
         </div>
     </div>
 
-    <!-- MODAL LOGOUT -->
+    <div id="resetModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header-red" style="padding: 25px;">
+                <i class="fa fa-exclamation-triangle" style="font-size: 50px; color: white;"></i>
+            </div>
+            <div class="modal-body">
+                <h3>Hapus Riwayat Kas?</h3>
+                <p>Tindakan ini akan <b>menghapus seluruh tabel riwayat arus kas.</b> (Saldo Kas Admin tidak akan terpengaruh/berubah).</p>
+                <form method="POST" action="">
+                    <div class="modal-buttons">
+                        <button type="button" class="btn-cancel" onclick="document.getElementById('resetModal').style.display='none'">Batal</button>
+                        <button type="submit" name="reset_kas" class="btn-confirm-red">Ya, Hapus Data</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div id="logoutModal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-header-red">
@@ -407,6 +476,9 @@ $path_foto_header = (!empty($data_admin['foto_profil']) && file_exists('assets/p
     }
 
     function showLogoutModal() { document.getElementById('logoutModal').style.display = 'flex'; }
+    
+    // FUNGSI MEMANGGIL MODAL RESET
+    function showResetModal() { document.getElementById('resetModal').style.display = 'flex'; }
 
     // FUNGSI SAKTI EXPORT KE EXCEL
     function exportTableToExcel(tableID, filename = ''){

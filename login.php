@@ -191,10 +191,10 @@ if (isset($_POST['submit_login'])) {
             </div>
 
             <div style="text-align: right; margin-bottom: 25px;">
-                <a href="https://wa.me/6289518426642?text=Halo%20Admin,%20saya%20lupa%20password%20akun%20Bank%20Sampah%20saya.%20Mohon%20bantuannya." target="_blank" style="color: #16a085; font-size: 13px; text-decoration: none; font-weight: bold; transition: 0.2s;">Lupa Password?</a>
+                <a href="https://wa.me/6287772666425?text=Halo%20Admin,%20saya%20lupa%20password%20akun%20Bank%20Sampah%20saya.%20Mohon%20bantuannya." target="_blank" style="color: #16a085; font-size: 13px; text-decoration: none; font-weight: bold; transition: 0.2s;">Lupa Password?</a>
             </div>
             
-            <button type="submit" name="submit_login" class="btn-login">MASUK SISTEM</button>
+            <button type="submit" name="submit_login" class="btn-login">MASUK</button>
         </form>
         
         <div class="link-registrasi">

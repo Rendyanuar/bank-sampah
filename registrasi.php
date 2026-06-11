@@ -41,7 +41,7 @@ if (mysqli_num_rows($query_last) > 0) {
 if (isset($_POST['submit_registrasi'])) {
     $nama_lengkap  = mysqli_real_escape_string($koneksi, $_POST['nama_lengkap']);
     $username      = mysqli_real_escape_string($koneksi, $_POST['username']); 
-    $nomor_telepon = mysqli_real_escape_string($koneksi, $_POST['nomor_telepon']); // Menangkap input nomor telepon
+    $nomor_telepon = mysqli_real_escape_string($koneksi, $_POST['nomor_telepon']); 
     $password      = $_POST['password'];
     $konfirmasi    = $_POST['konfirmasi_password'];
     $role          = "nasabah"; 
@@ -55,12 +55,22 @@ if (isset($_POST['submit_registrasi'])) {
         $pesan = "<div class='alert error'>Password dan Konfirmasi Password tidak cocok!</div>";
     } 
     else {
-        // Cek apakah nomor anggota tidak sengaja ganda 
-        $cek_ganda = mysqli_query($koneksi, "SELECT username FROM users WHERE username = '$username'");
+        // CEK GANDA: Username ATAU Nomor Telepon
+        // Filter nomor telepon khusus yang tidak kosong atau bukan tanda strip "-"
+        $cek_hp_query = ($nomor_telepon != "" && $nomor_telepon != "-") ? " OR nomor_telepon = '$nomor_telepon'" : "";
+        
+        $cek_ganda = mysqli_query($koneksi, "SELECT username, nomor_telepon FROM users WHERE username = '$username' $cek_hp_query");
+        
         if (mysqli_num_rows($cek_ganda) > 0) {
-            $pesan = "<div class='alert error'>Nomor Anggota ini baru saja diambil orang lain. Silakan refresh halaman dan buat nomor baru.</div>";
+            $data_ganda = mysqli_fetch_assoc($cek_ganda);
+            
+            if ($data_ganda['nomor_telepon'] == $nomor_telepon && $nomor_telepon != "-") {
+                $pesan = "<div class='alert error'><i class='fa fa-exclamation-triangle'></i> Nomor telepon <b>$nomor_telepon</b> sudah terdaftar! Silakan gunakan nomor lain.</div>";
+            } else {
+                $pesan = "<div class='alert error'><i class='fa fa-exclamation-triangle'></i> Nomor Anggota ini baru saja diambil orang lain. Silakan buat nomor baru.</div>";
+            }
         } else {
-            // Simpan ke database (Memasukkan juga nomor_telepon)
+            // Simpan ke database
             $query = "INSERT INTO users (username, password, nama_lengkap, nomor_telepon, role) 
                       VALUES ('$username', '$password', '$nama_lengkap', '$nomor_telepon', '$role')";
             
@@ -362,12 +372,10 @@ if (isset($_POST['submit_registrasi'])) {
             </div>
         </div>
 
-        <!-- INPUT NOMOR TELEPON YANG BARU DITAMBAHKAN -->
         <div class="input-group">
             <label>Nomor Telepon / WhatsApp</label>
             <div class="input-wrapper">
                 <span class="icon"><i class="fa fa-phone"></i></span>
-                <!-- Menggunakan type="text" agar tidak ada spinner naik-turun dan angka 0 aman -->
                 <input type="text" name="nomor_telepon" placeholder="Contoh: 081234567890" 
                        value="<?php echo isset($_POST['nomor_telepon']) ? htmlspecialchars($_POST['nomor_telepon']) : ''; ?>" required>
             </div>
@@ -376,7 +384,6 @@ if (isset($_POST['submit_registrasi'])) {
             </div>
         </div>
 
-        <!-- AREA KOTAK NOMOR ANGGOTA -->
         <div class="input-group">
             <label>Nomor Anggota (Otomatis)</label>
             <div class="input-wrapper wrapper-readonly">
@@ -441,7 +448,6 @@ if (isset($_POST['submit_registrasi'])) {
     Setiap sampah yang Anda tabung hari ini adalah langkah kecil untuk lingkungan hidup yang lebih hijau esok hari.</p>
 </div>
 
-<!-- ELEMEN TOAST NOTIFICATION -->
 <div id="customToast" class="toast-overlay-box">
     <i class="fa fa-check-circle"></i>
     <div id="toastMessage">Pesan akan muncul di sini</div>

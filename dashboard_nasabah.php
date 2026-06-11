@@ -148,11 +148,13 @@ if (isset($_POST['tarik_tunai'])) {
         table th { background-color: #f8f9fa; color: #555; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px;}
         table tr:hover { background-color: #f9fbfb; }
         
+        /* BADGE STATUS YANG DIPERBARUI */
         .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; color: white;}
         .badge-pending { background-color: #f39c12; }
         .badge-disetujui { background-color: #3498db; }
         .badge-selesai { background-color: #2ecc71; }
         .badge-ditolak { background-color: #e74c3c; }
+        .badge-dibatalkan { background-color: #95a5a6; } /* Warna abu-abu untuk Dibatalkan */
 
         /* MODAL GLOBAL */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.6); z-index: 9999; justify-content: center; align-items: center; }
@@ -298,7 +300,7 @@ if (isset($_POST['tarik_tunai'])) {
                     <div id="myDropdown" class="profile-dropdown-menu">
                         <a href="profil_nasabah.php"><i class="fa fa-user-circle"></i> Profil Saya</a>
                         <a href="ubah_password.php"><i class="fa fa-key"></i> Ubah Password</a>
-                        <a href="https://wa.me/6289518426642" target="_blank"><i class="fa fa-headset"></i> Bantuan (Admin)</a>
+                        <a href="https://wa.me/6287772666425" target="_blank"><i class="fa fa-headset"></i> Bantuan (Admin)</a>
                         <div class="dropdown-divider"></div>
                         <a onclick="showLogoutModal()" style="color: #e74c3c;"><i class="fa fa-sign-out-alt"></i> Keluar</a>
                     </div>
@@ -327,7 +329,7 @@ if (isset($_POST['tarik_tunai'])) {
                 
                 <div style="display: flex; align-items: center; gap: 6px;">
                     <span style="width: 14px; height: 14px; background-color: #3498db; border-radius: 4px;"></span> 
-                    <span><b>Disetujui</b> (Proses Pencairan)</span>
+                    <span><b>Disetujui</b> (Silakan datang ke tempat)</span>
                 </div>
                 
                 <div style="display: flex; align-items: center; gap: 6px;">
@@ -338,6 +340,11 @@ if (isset($_POST['tarik_tunai'])) {
                 <div style="display: flex; align-items: center; gap: 6px;">
                     <span style="width: 14px; height: 14px; background-color: #e74c3c; border-radius: 4px;"></span> 
                     <span><b>Ditolak</b> (Data Tidak Valid)</span>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="width: 14px; height: 14px; background-color: #95a5a6; border-radius: 4px;"></span> 
+                    <span><b>Dibatalkan</b> (Dibatalkan Nasabah)</span>
                 </div>
             </div>
 
@@ -377,6 +384,7 @@ if (isset($_POST['tarik_tunai'])) {
                                     echo "<td>" . $row['berat'] . " Kg</td>";
                                     echo "<td style='color:#2e7d32; font-weight:bold;'>Rp " . number_format($row['total_harga'], 0, ',', '.') . "</td>";
                                     
+                                    // LOGIKA STATUS YANG DIPERBARUI
                                     $status_db = strtolower(trim($row['status']));
                                     if ($status_db == 'selesai') {
                                         $badge_class = 'badge-selesai'; $text = 'Selesai';
@@ -384,6 +392,8 @@ if (isset($_POST['tarik_tunai'])) {
                                         $badge_class = 'badge-disetujui'; $text = 'Disetujui';
                                     } elseif ($status_db == 'ditolak') {
                                         $badge_class = 'badge-ditolak'; $text = 'Ditolak';
+                                    } elseif ($status_db == 'dibatalkan') {
+                                        $badge_class = 'badge-dibatalkan'; $text = 'Dibatalkan';
                                     } else {
                                         $badge_class = 'badge-pending'; $text = 'Menunggu';
                                     }

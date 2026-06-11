@@ -20,11 +20,6 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
                     ? 'assets/profil/' . $d_foto['foto_profil'] 
                     : 'https://ui-avatars.com/api/?name=' . urlencode($_SESSION['nama']) . '&background=1abc9c&color=fff';
 
-// Ambil Saldo Admin Saat Ini (Untuk Pengecekan di Modal Verifikasi)
-$q_saldo_admin = mysqli_query($koneksi, "SELECT saldo FROM users WHERE role = 'admin' LIMIT 1");
-$d_saldo_admin = mysqli_fetch_assoc($q_saldo_admin);
-$saldo_admin_saat_ini = ($d_saldo_admin['saldo'] !== null) ? $d_saldo_admin['saldo'] : 0;
-
 // PROSES JIKA ADMIN MENEKAN TOMBOL SETUJUI / TOLAK / SELESAI
 if (isset($_GET['aksi']) && isset($_GET['id'])) {
     $id_transaksi = mysqli_real_escape_string($koneksi, $_GET['id']);
@@ -39,7 +34,7 @@ if (isset($_GET['aksi']) && isset($_GET['id'])) {
         $user_nasabah = $d_trans['username_nasabah'];
 
         if ($aksi == 'setujui') {
-            // Mengubah status jadi disetujui (Admin bersiap transfer)
+            // Mengubah status jadi disetujui (Admin bersiap transfer manual, tidak memotong kas admin)
             $query_status = "UPDATE transaksi_tarik SET status = 'disetujui' WHERE id = '$id_transaksi'";
             if (mysqli_query($koneksi, $query_status)) {
                 $notif_sukses = "Penarikan disetujui! Silakan lakukan transfer ke rekening nasabah, lalu klik 'Selesaikan Transfer'.";
@@ -52,19 +47,21 @@ if (isset($_GET['aksi']) && isset($_GET['id'])) {
                 $notif_sukses = "Penarikan ditolak. Saldo sebesar Rp " . number_format($nominal, 0, ',', '.') . " telah dikembalikan ke nasabah.";
             }
         } elseif ($aksi == 'selesai') {
-            // TAHAP FINAL: Admin sudah mentransfer uang
+            // TAHAP FINAL: Admin sudah mentransfer uang. Langsung selesaikan tanpa cek saldo kas admin.
             if (strtolower(trim($d_trans['status'])) == 'disetujui') {
-                // Pengecekan kembali apakah saldo admin cukup
-                if ($saldo_admin_saat_ini >= $nominal) {
-                    mysqli_query($koneksi, "UPDATE transaksi_tarik SET status = 'selesai' WHERE id = '$id_transaksi'");
-                    $notif_sukses = "Transaksi Selesai! Uang telah berhasil dicairkan ke nasabah.";
-                } else {
-                    $notif_gagal = "Gagal memproses! Saldo kas Admin tidak mencukupi untuk transfer ini.";
-                }
+                mysqli_query($koneksi, "UPDATE transaksi_tarik SET status = 'selesai' WHERE id = '$id_transaksi'");
+                $notif_sukses = "Transaksi Selesai! Uang telah berhasil dicairkan ke nasabah.";
             }
         }
     }
 }
+
+// MENGHITUNG DATA PENDING UNTUK NOTIFIKASI SIDEBAR
+$q_notif_setoran = mysqli_query($koneksi, "SELECT COUNT(*) as total FROM transaksi_setoran WHERE status = 'pending'");
+$notif_setoran = mysqli_fetch_assoc($q_notif_setoran)['total'];
+
+$q_notif_tarik = mysqli_query($koneksi, "SELECT COUNT(*) as total FROM transaksi_tarik WHERE status = 'pending'");
+$notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
 ?>
 
 <!DOCTYPE html>
@@ -426,6 +423,7 @@ if (isset($_GET['aksi']) && isset($_GET['id'])) {
         </div>
     </div>
 
+    <!-- MODAL LOGOUT -->
     <div id="logoutModal" class="modal-overlay">
         <div class="modal-box modal-box-small">
             <div class="modal-header-red" style="background: #e74c3c;">
@@ -442,6 +440,7 @@ if (isset($_GET['aksi']) && isset($_GET['id'])) {
         </div>
     </div>
 
+    <!-- MODAL VERIFIKASI TRANSFER -->
     <div id="verifikasiModal" class="modal-overlay">
         <div class="modal-box modal-box-small">
             <div class="modal-header-blue">
@@ -449,19 +448,14 @@ if (isset($_GET['aksi']) && isset($_GET['id'])) {
             </div>
             <div class="modal-body">
                 <h3>Verifikasi Transfer</h3>
-                <p style="margin-bottom: 15px;">Pastikan Anda telah transfer ke rekening berikut sebelum menyelesaikan transaksi.</p>
+                <p style="margin-bottom: 15px;">Pastikan Anda telah transfer uang ke rekening di bawah ini sebelum menyelesaikan transaksi.</p>
                 
                 <div class="info-box">
                     <p>Nama: <strong id="strukNama" style="color: #333;">-</strong></p>
                     <p>Tujuan: <strong id="strukTujuan" style="color: #3498db;">-</strong></p>
                     <hr style="border: 0; border-top: 1px dashed #ccc; margin: 10px 0;">
                     <p>Nominal: <strong id="strukNominal" style="color: #e74c3c;">Rp 0</strong></p>
-                    <p style="margin-top: 10px; font-size: 11px;">Saldo Anda Saat Ini:<br> <b style="color: #2ecc71;">Rp <?php echo number_format($saldo_admin_saat_ini, 0, ',', '.'); ?></b></p>
                 </div>
-
-                <p id="pesanWarning" style="color: #e74c3c; font-weight: bold; font-size: 13px; display: none; margin-top:-10px; margin-bottom:15px;">
-                    <i class="fa fa-exclamation-triangle"></i> Saldo Kas Anda Kurang!
-                </p>
 
                 <div class="modal-buttons">
                     <button class="btn-cancel" onclick="closeVerifikasiModal()">Batal</button>
@@ -471,6 +465,7 @@ if (isset($_GET['aksi']) && isset($_GET['id'])) {
         </div>
     </div>
 
+    <!-- MODAL NOTIFIKASI -->
     <?php if (!empty($notif_sukses) || !empty($notif_gagal)) : ?>
     <div id="notifModal" class="modal-overlay" style="display: flex;">
         <div class="modal-box modal-box-small">
@@ -487,7 +482,6 @@ if (isset($_GET['aksi']) && isset($_GET['id'])) {
     <?php endif; ?>
 
 <script>
-    // --- FITUR HAMBURGER MENU (MOBILE) ---
     function toggleMobileMenu() {
         const sidebar = document.getElementById('sidebarMenu');
         const overlay = document.getElementById('sidebarOverlay');
@@ -501,7 +495,6 @@ if (isset($_GET['aksi']) && isset($_GET['id'])) {
         }
     }
 
-    // --- FUNGSI DROPDOWN PROFIL ---
     function toggleDropdown() {
         document.getElementById("myDropdown").classList.toggle("show");
     }
@@ -518,7 +511,6 @@ if (isset($_GET['aksi']) && isset($_GET['id'])) {
         }
     }
 
-    // FUNGSI LOGOUT & NOTIFIKASI
     function showLogoutModal() { document.getElementById('logoutModal').style.display = 'flex'; }
     function closeLogoutModal() { document.getElementById('logoutModal').style.display = 'none'; }
     
@@ -528,9 +520,8 @@ if (isset($_GET['aksi']) && isset($_GET['id'])) {
         setTimeout(function() { window.location.href = clean_url; }, 100);
     }
 
-    // --- FUNGSI MODAL VERIFIKASI SELESAI (CEK SALDO ADMIN) ---
+    // --- FUNGSI MODAL VERIFIKASI SELESAI (TANPA CEK SALDO ADMIN) ---
     let idTransaksiAktif = "";
-    let saldoAdminJS = <?php echo $saldo_admin_saat_ini; ?>;
 
     function showVerifikasiModal(id, nominal, metode, tujuan, nama) {
         idTransaksiAktif = 'transaksi_tarik.php?aksi=selesai&id=' + id;
@@ -543,22 +534,6 @@ if (isset($_GET['aksi']) && isset($_GET['id'])) {
         document.getElementById('strukTujuan').innerText = metode + " (" + tujuan + ")";
         document.getElementById('strukNominal').innerText = formatter.format(nominal);
         
-        let btnSelesaikan = document.getElementById('btnSelesaikan');
-        let pesanWarning = document.getElementById('pesanWarning');
-        
-        // Cek jika saldo admin kurang dari yang ditarik
-        if (saldoAdminJS < nominal) {
-            btnSelesaikan.style.opacity = '0.5';
-            btnSelesaikan.style.cursor = 'not-allowed';
-            btnSelesaikan.disabled = true; // MATIKAN TOMBOL
-            pesanWarning.style.display = 'block'; // MUNCULKAN TEKS PERINGATAN
-        } else {
-            btnSelesaikan.style.opacity = '1';
-            btnSelesaikan.style.cursor = 'pointer';
-            btnSelesaikan.disabled = false; // HIDUPKAN TOMBOL
-            pesanWarning.style.display = 'none'; // SEMBUNYIKAN PERINGATAN
-        }
-
         document.getElementById('verifikasiModal').style.display = 'flex';
     }
 

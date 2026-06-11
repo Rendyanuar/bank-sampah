@@ -348,7 +348,7 @@ if (isset($_POST['submit_setoran'])) {
                 
                 <div style="display: flex; align-items: center; gap: 6px;">
                     <span style="width: 14px; height: 14px; background-color: #3498db; border-radius: 4px;"></span> 
-                    <span><b>Disetujui</b> (Proses Pencairan Saldo)</span>
+                    <span><b>Disetujui</b> (Proses disetujui Silahkan datang ke tempat)</span>
                 </div>
                 
                 <div style="display: flex; align-items: center; gap: 6px;">
