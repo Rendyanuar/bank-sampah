@@ -62,8 +62,10 @@ if (isset($_POST['submit_setoran'])) {
 
             // Jika tidak ada error upload gambar, masukkan data ke database
             if (empty($notif_gagal) && $nama_file_gambar !== NULL) {
-                $q_insert = "INSERT INTO transaksi_setoran (username_nasabah, id_kategori, berat, total_harga, status, gambar_sampah) 
-                             VALUES ('$username_aktif', $id_kategori, $berat, $total_harga, 'pending', '$nama_file_gambar')";
+                date_default_timezone_set('Asia/Jakarta');
+                $waktu_sekarang = date('Y-m-d H:i:s');
+                $q_insert = "INSERT INTO transaksi_setoran (username_nasabah, id_kategori, berat, total_harga, status, gambar_sampah, tanggal) 
+                             VALUES ('$username_aktif', $id_kategori, $berat, $total_harga, 'pending', '$nama_file_gambar', '$waktu_sekarang')";
                 
                 if (mysqli_query($koneksi, $q_insert)) {
                     $notif_sukses = "Formulir setoran berhasil dikirim! Silakan tunggu Admin memverifikasi sampah Anda.";

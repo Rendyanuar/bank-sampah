@@ -44,9 +44,13 @@ if (isset($_POST['tarik_tunai'])) {
     } elseif (empty($metode_final)) {
         $notif_gagal = "Mohon sebutkan nama Bank / E-Wallet tujuan Anda.";
     } else {
-        // Masukkan data ke tabel riwayat penarikan (Gunakan $metode_final)
-        $q_insert = "INSERT INTO transaksi_tarik (username_nasabah, nominal, metode, nomor_tujuan, status) 
-                     VALUES ('$username_aktif', '$nominal_tarik', '$metode_final', '$nomor_tujuan', 'pending')";
+        // Paksa ambil waktu Jakarta dari PHP
+        date_default_timezone_set('Asia/Jakarta');
+        $waktu_sekarang = date('Y-m-d H:i:s');
+        
+        // Masukkan data ke tabel riwayat penarikan (beserta kolom tanggal)
+        $q_insert = "INSERT INTO transaksi_tarik (username_nasabah, nominal, metode, nomor_tujuan, status, tanggal) 
+                     VALUES ('$username_aktif', '$nominal_tarik', '$metode_final', '$nomor_tujuan', 'pending', '$waktu_sekarang')";
         
         if (mysqli_query($koneksi, $q_insert)) {
             // Potong saldo nasabah sementara (agar tidak double request)
@@ -234,14 +238,17 @@ if (isset($_POST['tarik_tunai'])) {
 
             /* UKURAN MODAL SUPER MUNGIL KHUSUS LOGOUT & NOTIFIKASI */
             .modal-box-small { max-width: 280px !important; border-radius: 12px; }
-            .modal-box-small .modal-header-red, .modal-box-small .modal-header-green { padding: 15px; }
-            .modal-box-small .modal-header-red img { width: 55px; }
-            .modal-box-small .modal-header-green i, .modal-box-small .modal-header-red i { font-size: 40px; }
-            .modal-box-small .modal-body { padding: 20px 20px 25px 20px; }
+            .modal-box-small .modal-header-green, .modal-box-small .modal-header-red, .modal-box-small .modal-header-blue { padding: 15px; }
+            .modal-box-small .modal-header-green i, .modal-box-small .modal-header-red i, .modal-box-small .modal-header-blue i { font-size: 40px; }
+            .modal-box-small .modal-header-red img { width: 60px; }
+            .modal-box-small .modal-body { padding: 15px 20px 20px 20px; }
             .modal-box-small .modal-body h3 { font-size: 18px; margin-bottom: 8px;}
-            .modal-box-small .modal-body p { font-size: 13px; margin-bottom: 20px; line-height: 1.4; }
-            .modal-box-small .modal-buttons { gap: 10px; }
-            .modal-box-small .modal-buttons button { padding: 10px; font-size: 13px; }
+            .modal-box-small .modal-body p { font-size: 13px; margin-bottom: 15px; line-height: 1.4; }
+            .modal-box-small .info-box { padding: 12px; margin-bottom: 15px; }
+            .modal-box-small .info-box p { font-size: 12px; margin-bottom: 5px; }
+            .modal-box-small .info-box strong { font-size: 14px; }
+            .modal-box-small .modal-buttons { gap: 8px; }
+            .modal-box-small .modal-buttons button { padding: 10px; font-size: 12px; }
         }
     </style>
 </head>

@@ -10,6 +10,10 @@ if (!isset($_SESSION['login']) || $_SESSION['role'] != 'admin') {
 }
 
 include 'koneksi.php';
+
+// Paksa PHP menggunakan waktu Indonesia agar fungsi date() di tabel akurat
+date_default_timezone_set('Asia/Jakarta');
+
 $notif_sukses = "";
 $notif_gagal = "";
 
@@ -423,7 +427,6 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
         </div>
     </div>
 
-    <!-- MODAL LOGOUT -->
     <div id="logoutModal" class="modal-overlay">
         <div class="modal-box modal-box-small">
             <div class="modal-header-red" style="background: #e74c3c;">
@@ -440,7 +443,6 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
         </div>
     </div>
 
-    <!-- MODAL VERIFIKASI TRANSFER -->
     <div id="verifikasiModal" class="modal-overlay">
         <div class="modal-box modal-box-small">
             <div class="modal-header-blue">
@@ -465,7 +467,6 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
         </div>
     </div>
 
-    <!-- MODAL NOTIFIKASI -->
     <?php if (!empty($notif_sukses) || !empty($notif_gagal)) : ?>
     <div id="notifModal" class="modal-overlay" style="display: flex;">
         <div class="modal-box modal-box-small">

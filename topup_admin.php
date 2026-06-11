@@ -35,8 +35,12 @@ if (isset($_POST['topup_saldo'])) {
     if ($jumlah_tambah > 0) {
         $query = "UPDATE users SET saldo = COALESCE(saldo, 0) + $jumlah_tambah WHERE role = 'admin'";
         if (mysqli_query($koneksi, $query)) {
-            // Catat ke Riwayat Kas Admin
-            mysqli_query($koneksi, "INSERT INTO riwayat_kas_admin (jenis_transaksi, nominal, keterangan) VALUES ('Masuk', '$jumlah_tambah', 'Top Up / Penambahan Kas Admin')");
+            // Paksa ambil waktu Jakarta dari PHP
+            date_default_timezone_set('Asia/Jakarta');
+            $waktu_sekarang = date('Y-m-d H:i:s');
+            
+            // Catat ke Riwayat Kas Admin dengan tambahan kolom tanggal
+            mysqli_query($koneksi, "INSERT INTO riwayat_kas_admin (jenis_transaksi, nominal, keterangan, tanggal) VALUES ('Masuk', '$jumlah_tambah', 'Top Up / Penambahan Kas Admin', '$waktu_sekarang')");
             $pesan_sukses = "Berhasil! Saldo kas ditambahkan sebesar Rp " . number_format($jumlah_tambah, 0, ',', '.') . ".";
         } else {
             $pesan_error = "Terjadi kesalahan pada database saat menambah kas.";
@@ -61,9 +65,13 @@ if (isset($_POST['kurangi_saldo'])) {
         if ($saldo_sementara >= $jumlah_kurang) {
             $query = "UPDATE users SET saldo = saldo - $jumlah_kurang WHERE role = 'admin'";
             if (mysqli_query($koneksi, $query)) {
-                // Catat ke Riwayat Kas Admin
+                // Paksa ambil waktu Jakarta dari PHP
+                date_default_timezone_set('Asia/Jakarta');
+                $waktu_sekarang = date('Y-m-d H:i:s');
+                
+                // Catat ke Riwayat Kas Admin dengan tambahan kolom tanggal
                 $ket = !empty($keterangan_kurang) ? $keterangan_kurang : 'Penarikan Kas Admin';
-                mysqli_query($koneksi, "INSERT INTO riwayat_kas_admin (jenis_transaksi, nominal, keterangan) VALUES ('Keluar', '$jumlah_kurang', '$ket')");
+                mysqli_query($koneksi, "INSERT INTO riwayat_kas_admin (jenis_transaksi, nominal, keterangan, tanggal) VALUES ('Keluar', '$jumlah_kurang', '$ket', '$waktu_sekarang')");
                 $pesan_sukses = "Berhasil! Saldo kas dikurangi sebesar Rp " . number_format($jumlah_kurang, 0, ',', '.') . ".";
             } else {
                 $pesan_error = "Terjadi kesalahan pada database saat mengurangi kas.";
@@ -366,7 +374,6 @@ if ($total_halaman == 0) $total_halaman = 1; // Mencegah 1/0
                         </thead>
                         <tbody>
                             <?php
-                            // UPDATE: Menambahkan LIMIT $halaman_awal, $batas untuk PAGINATION
                             $query_riwayat = "SELECT * FROM riwayat_kas_admin ORDER BY tanggal DESC LIMIT $halaman_awal, $batas";
                             $result_riwayat = mysqli_query($koneksi, $query_riwayat);
                             $no_riwayat = $halaman_awal + 1; // Update nomor urut otomatis

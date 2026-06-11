@@ -13,6 +13,10 @@ if (!isset($_SESSION['login']) || $_SESSION['role'] != 'nasabah') {
 }
 
 include 'koneksi.php';
+
+// Paksa PHP menggunakan waktu Indonesia agar fungsi date() di tabel akurat
+date_default_timezone_set('Asia/Jakarta');
+
 $username_aktif = $_SESSION['username'];
 $notif_sukses = "";
 $notif_gagal = "";
