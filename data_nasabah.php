@@ -59,7 +59,7 @@ if (isset($_POST['tarik_saldo_admin'])) {
     $saldo_admin_sekarang = (int)mysqli_fetch_assoc($cek_admin)['saldo'];
 
     if ($nominal > $saldo_sekarang) {
-        $pesan_error = "Gagal! Nominal penarikan melebihi saldo nasabah.";
+        $pesan_error = "Gagal! Nominal penarikan (Rp " . number_format($nominal, 0, ',', '.') . ") melebihi sisa saldo nasabah (Rp " . number_format($saldo_sekarang, 0, ',', '.') . ").";
     } elseif ($nominal > $saldo_admin_sekarang) {
         $pesan_error = "Gagal! Saldo Kas Admin tidak cukup untuk pencairan ini (Sisa Kas: Rp " . number_format($saldo_admin_sekarang, 0, ',', '.') . "). Silakan Top Up Kas Admin.";
     } elseif ($nominal < 1000) {
@@ -334,7 +334,7 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
         <div class="modal-box modal-box-small">
             <div class="modal-header-orange"><i class="fa fa-exclamation-circle" style="font-size: 50px;"></i></div>
             <div class="modal-body">
-                <h3 style="text-align:center;">Saldo Kosong!</h3>
+                <h3 id="warningTitle" style="text-align:center;">Saldo Kosong!</h3>
                 <p id="warningText" style="text-align:center;">Nasabah tidak memiliki saldo.</p>
                 <button class="btn-confirm-red" style="background:#e67e22; width:100%; border:none; padding:12px; border-radius:25px; color:white; font-weight:bold;" onclick="document.getElementById('warningModal').style.display='none'">Mengerti</button>
             </div>
@@ -379,7 +379,8 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
                     <span id="display_nama_nasabah"></span><br>
                     <span id="display_saldo_max" style="font-size: 22px;"></span>
                 </div>
-                <form action="data_nasabah.php" method="POST">
+                
+                <form action="data_nasabah.php" method="POST" onsubmit="return validasiTarik(event)">
                     <input type="hidden" name="uname_nasabah" id="input_uname_nasabah">
                     <div class="form-group-modal">
                         <label>Nominal yang Ditarik (Rp)</label>
@@ -472,8 +473,10 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
         document.getElementById('tambahModal').style.display = 'flex';
     }
     function closeTambahModal() { document.getElementById('tambahModal').style.display = 'none'; }
+    
     function showTarikModal(username, namaLengkap, saldoMax) {
         if (saldoMax <= 0) {
+            document.getElementById('warningTitle').innerText = "Saldo Kosong!";
             document.getElementById('warningText').innerHTML = "Nasabah <b>" + namaLengkap + "</b> tidak memiliki saldo (Rp 0).";
             document.getElementById('warningModal').style.display = 'flex';
             return;
@@ -487,6 +490,28 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
         document.getElementById('tarikModal').style.display = 'flex';
     }
     function closeTarikModal() { document.getElementById('tarikModal').style.display = 'none'; }
+    
+    // LOGIKA VALIDASI JS UNTUK PENARIKAN SALDO BERLEBIH
+    function validasiTarik(e) {
+        let inputNominal = parseInt(document.getElementById('input_nominal_tarik').value);
+        let maxSaldo = parseInt(document.getElementById('input_nominal_tarik').max);
+        
+        if (inputNominal > maxSaldo) {
+            e.preventDefault(); // Hentikan form agar tidak me-refresh / submit ke PHP
+            
+            let rupiahMax = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(maxSaldo);
+            let rupiahReq = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(inputNominal);
+            
+            // Tutup form penarikan dan tampilkan Modal Peringatan
+            document.getElementById('tarikModal').style.display = 'none';
+            document.getElementById('warningTitle').innerText = "Saldo Tidak Cukup!";
+            document.getElementById('warningText').innerHTML = "Gagal memproses <b>" + rupiahReq + "</b>.<br>Sisa saldo nasabah hanya <b>" + rupiahMax + "</b>.";
+            document.getElementById('warningModal').style.display = 'flex';
+            return false;
+        }
+        return true;
+    }
+
     let deleteTargetUrl = "";
     function showDeleteModal(username) {
         deleteTargetUrl = 'data_nasabah.php?hapus=' + encodeURIComponent(username);
