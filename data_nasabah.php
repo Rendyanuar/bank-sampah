@@ -380,7 +380,7 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
                     <span id="display_saldo_max" style="font-size: 22px;"></span>
                 </div>
                 
-                <form action="data_nasabah.php" method="POST" onsubmit="return validasiTarik(event)">
+                <form action="data_nasabah.php" method="POST" onsubmit="return validasiTarik(event)" novalidate>
                     <input type="hidden" name="uname_nasabah" id="input_uname_nasabah">
                     <div class="form-group-modal">
                         <label>Nominal yang Ditarik (Rp)</label>
@@ -412,12 +412,14 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
     <div id="deleteModal" class="modal-overlay">
         <div class="modal-box modal-box-small">
             <div class="modal-header-red"><i class="fa fa-exclamation-triangle" style="font-size:40px;"></i></div>
-            <div class="modal-body" style="text-align:center;">
-                <h3>Hapus Data?</h3>
-                <p>Apakah Anda yakin ingin menghapus data nasabah ini?</p>
-                <div class="modal-buttons">
-                    <button class="btn-cancel" onclick="closeDeleteModal()">Batal</button>
-                    <button class="btn-confirm-red" style="background:#e74c3c;" onclick="executeDelete()">Hapus</button>
+            <div class="modal-box-small">
+                <div class="modal-body" style="text-align:center;">
+                    <h3>Hapus Data?</h3>
+                    <p>Apakah Anda yakin ingin menghapus data nasabah ini?</p>
+                    <div class="modal-buttons">
+                        <button class="btn-cancel" onclick="closeDeleteModal()">Batal</button>
+                        <button class="btn-confirm-red" style="background:#e74c3c;" onclick="executeDelete()">Hapus</button>
+                    </div>
                 </div>
             </div>
         </div>
