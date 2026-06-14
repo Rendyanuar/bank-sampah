@@ -15,11 +15,9 @@ if (isset($_SESSION['login'])) {
 $error = "";
 
 if (isset($_POST['submit_login'])) {
-    // Menangkap inputan (Nomor Anggota ATAU Nomor Telepon)
     $username = mysqli_real_escape_string($koneksi, $_POST['username']);
     $password = $_POST['password'];
 
-    // Cek ke database: Cocokkan dengan kolom username ATAU kolom nomor_telepon
     $query = "SELECT * FROM users WHERE username = '$username' OR nomor_telepon = '$username'";
     $result = mysqli_query($koneksi, $query);
 
@@ -57,67 +55,111 @@ if (isset($_POST['submit_login'])) {
     <style>
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            /* Trik Cache Busting otomatis di bagian URL */
-            background-image: url('assets/bg-lingkungan.jpg?v=<?php echo time(); ?>'); 
-            background-size: cover; 
-            background-position: center; 
-            background-attachment: fixed; 
-            background-repeat: no-repeat; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
             margin: 0; 
             box-sizing: border-box;
+            background-color: #f4f7f6;
         }
-        body::before { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.3); z-index: 1; }
+
+        /* LAYOUT BAGI DUA (SPLIT SCREEN) UNTUK DESKTOP */
+        .split-layout {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+        }
+
+        /* BAGIAN KIRI - BRANDING & POHON */
+        .left-side {
+            flex: 1.2;
+            background-image: url('assets/bg-lingkungan.jpg?v=<?php echo time(); ?>'); 
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            overflow: hidden;
+        }
+        .left-side::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(26, 188, 156, 0.85), rgba(46, 125, 50, 0.9));
+            z-index: 1;
+        }
+        .left-content {
+            position: relative;
+            z-index: 2;
+            padding: 40px;
+        }
         
-        /* EFEK GLASSMORPHISM (KACA TRANSPARAN) */
-        .container { 
-            position: relative; 
-            z-index: 2; 
-            background-color: rgba(255, 255, 255, 0.85); /* Putih transparan */
-            backdrop-filter: blur(12px); /* Efek blur kaca */
-            -webkit-backdrop-filter: blur(12px); /* Dukungan untuk Safari */
-            border: 1px solid rgba(255, 255, 255, 0.5); /* Garis tepi tipis ala kaca */
-            padding: 40px 30px; 
-            border-radius: 16px; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2); 
+        .tree-illustration {
+            font-size: 80px;
+            color: #ffffff;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));
+        }
+
+        .left-content h1 {
+            font-size: 46px;
+            margin: 10px 0;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            line-height: 1.2;
+        }
+        .left-content p {
+            font-size: 18px;
+            margin-top: 5px;
+            font-weight: 500;
+            opacity: 0.9;
+            letter-spacing: 1px;
+        }
+
+        /* BAGIAN KANAN - FORM LOGIN */
+        .right-side {
+            flex: 1;
+            max-width: 500px;
+            background-color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+            z-index: 2;
+        }
+        .login-box { 
             width: 100%; 
             max-width: 380px; 
             text-align: center; 
-            box-sizing: border-box; 
         }
         
-        .logo-instansi { width: 80px; height: auto; margin-bottom: 10px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
-        .container h2 { color: #2e7d32; margin-top: 0; margin-bottom: 5px; font-size: 22px; text-shadow: 0 1px 2px rgba(255,255,255,0.8); }
-        .container p.subtitle { color: #444; font-size: 13px; margin-bottom: 25px; margin-top: 0; font-weight: 600;}
+        .logo-instansi { width: 70px; height: auto; margin-bottom: 15px; }
+        .login-box h2 { color: #238b45; margin-top: 0; margin-bottom: 5px; font-size: 28px; font-weight: bold;}
+        .login-box p.subtitle { color: #666; font-size: 15px; margin-bottom: 35px; margin-top: 0; }
         
-        .alert-error { background-color: rgba(255, 235, 238, 0.9); color: #c62828; padding: 10px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; text-align: left; border: 1px solid #ffcdd2; }
+        .alert-error { background-color: rgba(255, 235, 238, 0.9); color: #c62828; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; text-align: left; border: 1px solid #ffcdd2; }
         
         .input-group { margin-bottom: 20px; text-align: left; }
-        .input-group label { display: block; margin-bottom: 8px; color: #222; font-size: 14px; font-weight: bold; }
+        .input-group label { display: block; margin-bottom: 8px; color: #333; font-size: 15px; font-weight: bold; }
         
-        /* Desain Input Wrapper */
         .input-wrapper { 
             display: flex; 
-            border: 1px solid rgba(200, 200, 200, 0.8); 
+            border: 1px solid #dcdcdc; 
             border-radius: 8px; 
-            background-color: rgba(255, 255, 255, 0.9); /* Sedikit lebih solid agar teks ketikan jelas */
+            background-color: #fdfdfd; 
             overflow: hidden;
             transition: 0.3s;
         }
-        .input-wrapper:focus-within { border-color: #1abc9c; box-shadow: 0 0 8px rgba(26, 188, 156, 0.3); background-color: #ffffff;}
-        .input-wrapper .icon { padding: 12px 15px; background-color: rgba(241, 241, 241, 0.8); color: #555; border-right: 1px solid rgba(200, 200, 200, 0.5); display: flex; align-items: center; width: 20px; justify-content: center; }
-        .input-wrapper input { flex: 1; padding: 12px 15px; border: none; background: transparent; outline: none; font-size: 14px; color: #333; width: 100%;}
+        .input-wrapper:focus-within { border-color: #1abc9c; box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.1); background-color: #ffffff;}
+        .input-wrapper .icon { padding: 14px 15px; color: #888; display: flex; align-items: center; justify-content: center; }
+        .input-wrapper input { flex: 1; padding: 14px 15px 14px 0; border: none; background: transparent; outline: none; font-size: 15px; color: #333; width: 100%;}
         
-        /* Menghilangkan mata bawaan browser agar tidak ganda */
-        input::-ms-reveal,
-        input::-ms-clear { display: none; }
+        input::-ms-reveal, input::-ms-clear { display: none; }
         
-        /* Style untuk ikon mata (Fitur Hold) */
         .input-wrapper .icon-toggle {
-            padding: 12px 15px;
+            padding: 14px 15px;
             color: #888;
             cursor: pointer;
             display: flex;
@@ -128,88 +170,109 @@ if (isset($_POST['submit_login'])) {
             user-select: none;
         }
         .input-wrapper .icon-toggle:hover { color: #1abc9c; }
-        .input-wrapper .icon-toggle:active { color: #16a085; }
 
-        .btn-login { width: 100%; padding: 14px; background-color: #1abc9c; color: white; border: none; border-radius: 25px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(26,188,156,0.2);}
+        .btn-login { width: 100%; padding: 15px; background-color: #1abc9c; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(26,188,156,0.2);}
         .btn-login:hover { background-color: #16a085; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(26,188,156,0.3);}
         
-        .link-registrasi { font-size: 14px; color: #333; font-weight: 500;}
-        .link-registrasi a { color: #16a085; text-decoration: none; font-weight: bold; }
+        .link-registrasi { font-size: 15px; color: #555; }
+        .link-registrasi a { color: #1abc9c; text-decoration: none; font-weight: bold; }
 
         /* =======================================================
-           RESPONSIVE MOBILE (HP) - DIPERBAIKI AGAR LEBIH RAMPING
+           RESPONSIVE MOBILE (HP) - CLEAN & SIMPLE (SESUAI GAMBAR)
            ======================================================= */
-        @media screen and (max-width: 768px) {
-            body { padding: 15px; }
-            .container { 
-                padding: 30px 20px; 
-                max-width: 320px; /* Ukuran dipersempit agar tidak kebesaran di HP */
+        @media screen and (max-width: 850px) {
+            .split-layout { 
+                display: flex; 
+                flex-direction: column;
             }
-            .logo-instansi { width: 70px; }
-            .container h2 { font-size: 20px; }
-            .input-wrapper .icon { padding: 10px 12px; }
-            .input-wrapper input { padding: 10px 12px; font-size: 13px; }
-            .btn-login { padding: 12px; font-size: 15px; }
+            
+            /* Sembunyikan bagian kiri (gambar & pohon) sepenuhnya */
+            .left-side { 
+                display: none; 
+            }
+            
+            /* Form mengambil alih seluruh layar tanpa shadow */
+            .right-side { 
+                max-width: 100%; 
+                min-height: 100vh;
+                min-height: 100dvh; /* Kunci ukuran layar penuh */
+                padding: 20px;
+                box-shadow: none;
+            }
+            
+            .login-box {
+                max-width: 400px; /* Lebar optimal di HP */
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <img src="assets/logo-lebak.png" alt="Logo Instansi" class="logo-instansi">
-        
-        <h2>BANK SAMPAH INDUK</h2>
-        <p class="subtitle">Dinas Lingkungan Hidup Kab. Lebak</p>
-        
-        <?php if (!empty($error)) : ?>
-            <div class="alert-error"><i class="fa fa-exclamation-triangle"></i> <?php echo $error; ?></div>
-        <?php endif; ?>
-        
-        <form action="" method="POST">
-            <div class="input-group">
-                <label>Nomor Anggota / Telepon</label>
-                <div class="input-wrapper">
-                    <span class="icon"><i class="fa fa-id-card"></i></span>
-                    <input type="text" name="username" placeholder="Nomor Anggota / Telepon" value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>" required>
-                </div>
+    
+    <div class="split-layout">
+        <div class="left-side">
+            <div class="left-content">
+                <i class="fa-solid fa-tree tree-illustration"></i>
+                <h1>BANK SAMPAH <br> INDUK</h1>
+                <p>Dinas Lingkungan Hidup Kab. Lebak</p>
             </div>
-            
-            <div class="input-group" style="margin-bottom: 8px;">
-                <label>Password</label>
-                <div class="input-wrapper">
-                    <span class="icon"><i class="fa fa-lock"></i></span>
-                    <input type="password" name="password" id="input-password" placeholder="Masukkan Password Anda" required>
-                    
-                    <span class="icon-toggle" 
-                          onmousedown="showPassword('input-password', 'icon-pw')" 
-                          onmouseup="hidePassword('input-password', 'icon-pw')"
-                          onmouseleave="hidePassword('input-password', 'icon-pw')"
-                          ontouchstart="showPassword('input-password', 'icon-pw')"
-                          ontouchend="hidePassword('input-password', 'icon-pw')">
-                        <i class="fa fa-eye" id="icon-pw"></i>
-                    </span>
-                </div>
-            </div>
+        </div>
 
-            <div style="text-align: right; margin-bottom: 25px;">
-                <a href="https://wa.me/6287772666425?text=Halo%20Admin,%20saya%20lupa%20password%20akun%20Bank%20Sampah%20saya.%20Mohon%20bantuannya." target="_blank" style="color: #16a085; font-size: 13px; text-decoration: none; font-weight: bold; transition: 0.2s;">Lupa Password?</a>
+        <div class="right-side">
+            <div class="login-box">
+                <img src="assets/logo-lebak.png" alt="Logo Instansi" class="logo-instansi">
+                <h2>Selamat Datang</h2>
+                <p class="subtitle">Silakan masuk menggunakan akun Anda</p>
+                
+                <?php if (!empty($error)) : ?>
+                    <div class="alert-error"><i class="fa fa-exclamation-triangle"></i> <?php echo $error; ?></div>
+                <?php endif; ?>
+                
+                <form action="" method="POST">
+                    <div class="input-group">
+                        <label>Nomor Anggota / Telepon</label>
+                        <div class="input-wrapper">
+                            <span class="icon"><i class="fa fa-id-card"></i></span>
+                            <input type="text" name="username" placeholder="Masukkan No Anggota atau No Telepon" value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>" required>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group" style="margin-bottom: 8px;">
+                        <label>Password</label>
+                        <div class="input-wrapper">
+                            <span class="icon"><i class="fa fa-lock"></i></span>
+                            <input type="password" name="password" id="input-password" placeholder="Masukkan Password" required>
+                            
+                            <span class="icon-toggle" 
+                                  onmousedown="showPassword('input-password', 'icon-pw')" 
+                                  onmouseup="hidePassword('input-password', 'icon-pw')"
+                                  onmouseleave="hidePassword('input-password', 'icon-pw')"
+                                  ontouchstart="showPassword('input-password', 'icon-pw')"
+                                  ontouchend="hidePassword('input-password', 'icon-pw')">
+                                <i class="fa fa-eye" id="icon-pw"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="text-align: right; margin-bottom: 25px;">
+                        <a href="https://wa.me/6287772666425?text=Halo%20Admin,%20saya%20lupa%20password%20akun%20Bank%20Sampah%20saya.%20Mohon%20bantuannya." target="_blank" style="color: #1abc9c; font-size: 14px; text-decoration: none; font-weight: bold; transition: 0.2s;">Lupa Password?</a>
+                    </div>
+                    
+                    <button type="submit" name="submit_login" class="btn-login">MASUK</button>
+                </form>
+                
+                <div class="link-registrasi">
+                    Belum punya akun? <a href="registrasi.php">Daftar Nasabah Baru</a>
+                </div>
             </div>
-            
-            <button type="submit" name="submit_login" class="btn-login">MASUK</button>
-        </form>
-        
-        <div class="link-registrasi">
-            Belum punya akun? <a href="registrasi.php">Daftar Nasabah Baru</a>
         </div>
     </div>
 
 <script>
-    // Fungsi untuk menampilkan password (saat ditahan/hold)
     function showPassword(inputId, iconId) {
         document.getElementById(inputId).type = "text";
         document.getElementById(iconId).classList.replace("fa-eye", "fa-eye-slash");
     }
 
-    // Fungsi untuk menyembunyikan password (saat dilepas)
     function hidePassword(inputId, iconId) {
         document.getElementById(inputId).type = "password";
         document.getElementById(iconId).classList.replace("fa-eye-slash", "fa-eye");

@@ -48,15 +48,14 @@ if (isset($_POST['submit_registrasi'])) {
 
     // Validasi apakah tombol generate sudah ditekan
     if (empty($username)) {
-        $pesan = "<div class='alert error'>Silakan klik tombol 'Buat Nomor Anggota Baru' terlebih dahulu!</div>";
+        $pesan = "<div class='alert-error'><i class='fa fa-exclamation-triangle'></i> Silakan klik tombol 'Buat Nomor Anggota Baru' terlebih dahulu!</div>";
     } 
     // Validasi Password
     else if ($password !== $konfirmasi) {
-        $pesan = "<div class='alert error'>Password dan Konfirmasi Password tidak cocok!</div>";
+        $pesan = "<div class='alert-error'><i class='fa fa-exclamation-triangle'></i> Password dan Konfirmasi Password tidak cocok!</div>";
     } 
     else {
         // CEK GANDA: Username ATAU Nomor Telepon
-        // Filter nomor telepon khusus yang tidak kosong atau bukan tanda strip "-"
         $cek_hp_query = ($nomor_telepon != "" && $nomor_telepon != "-") ? " OR nomor_telepon = '$nomor_telepon'" : "";
         
         $cek_ganda = mysqli_query($koneksi, "SELECT username, nomor_telepon FROM users WHERE username = '$username' $cek_hp_query");
@@ -65,9 +64,9 @@ if (isset($_POST['submit_registrasi'])) {
             $data_ganda = mysqli_fetch_assoc($cek_ganda);
             
             if ($data_ganda['nomor_telepon'] == $nomor_telepon && $nomor_telepon != "-") {
-                $pesan = "<div class='alert error'><i class='fa fa-exclamation-triangle'></i> Nomor telepon <b>$nomor_telepon</b> sudah terdaftar! Silakan gunakan nomor lain.</div>";
+                $pesan = "<div class='alert-error'><i class='fa fa-exclamation-triangle'></i> Nomor telepon <b>$nomor_telepon</b> sudah terdaftar! Silakan gunakan nomor lain.</div>";
             } else {
-                $pesan = "<div class='alert error'><i class='fa fa-exclamation-triangle'></i> Nomor Anggota ini baru saja diambil orang lain. Silakan buat nomor baru.</div>";
+                $pesan = "<div class='alert-error'><i class='fa fa-exclamation-triangle'></i> Nomor Anggota ini baru saja diambil orang lain. Silakan buat nomor baru.</div>";
             }
         } else {
             // Simpan ke database
@@ -78,7 +77,7 @@ if (isset($_POST['submit_registrasi'])) {
                 $registrasi_sukses = true;
                 $_POST = array(); // Kosongkan form
             } else {
-                $pesan = "<div class='alert error'>Gagal menyimpan data ke database.</div>";
+                $pesan = "<div class='alert-error'><i class='fa fa-exclamation-triangle'></i> Gagal menyimpan data ke database.</div>";
             }
         }
     }
@@ -95,72 +94,112 @@ if (isset($_POST['submit_registrasi'])) {
     <style>
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-image: url('assets/bg-lingkungan.jpg?v=<?php echo time(); ?>'); 
-            background-size: cover;          
-            background-position: center;     
-            background-attachment: fixed;    
-            background-repeat: no-repeat;
-            display: flex; 
-            flex-direction: column; 
-            align-items: center;
-            justify-content: center; 
-            padding: 40px 20px; 
             margin: 0; 
+            box-sizing: border-box;
+            background-color: #f4f7f6; /* Sama dengan login */
+        }
+
+        /* LAYOUT BAGI DUA (SPLIT SCREEN) UNTUK DESKTOP - SAMA PERSIS LOGIN */
+        .split-layout {
+            display: flex;
             min-height: 100vh;
-            box-sizing: border-box;
+            width: 100%;
         }
 
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.3);
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        /* EFEK GLASSMORPHISM KOTAK UTAMA */
-        .container { 
+        /* BAGIAN KIRI - BRANDING & POHON */
+        .left-side {
+            flex: 1.2;
+            background-image: url('assets/bg-lingkungan.jpg?v=<?php echo time(); ?>'); 
+            background-size: cover;
+            background-position: center;
             position: relative;
-            z-index: 10;
-            background-color: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.5); 
-            padding: 45px 40px; 
-            border-radius: 16px; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2); 
-            width: 100%; 
-            max-width: 550px; 
-            border-top: 6px solid #2e7d32; 
-            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            overflow: hidden;
+        }
+        .left-side::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(26, 188, 156, 0.85), rgba(46, 125, 50, 0.9));
+            z-index: 1;
+        }
+        .left-content {
+            position: relative;
+            z-index: 2;
+            padding: 40px;
+        }
+        
+        .tree-illustration {
+            font-size: 80px;
+            color: #ffffff;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));
         }
 
-        .title-wrapper { text-align: center; margin-bottom: 30px; }
-        .title-wrapper h2 { margin: 0; color: #2e7d32; letter-spacing: 1.5px; font-weight: 800; font-size: 24px; text-shadow: 0 1px 2px rgba(255,255,255,0.8);}
-        .title-line { height: 4px; background-color: #1abc9c; width: 60px; margin: 10px auto 0; border-radius: 2px;}
+        .left-content h1 {
+            font-size: 46px;
+            margin: 10px 0;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            line-height: 1.2;
+        }
+        .left-content p {
+            font-size: 18px;
+            margin-top: 5px;
+            font-weight: 500;
+            opacity: 0.9;
+            letter-spacing: 1px;
+        }
 
-        /* SPASI UNTUK SETIAP INPUT */
-        .input-group { margin-bottom: 20px; }
-        .input-group label { display: block; margin-bottom: 8px; color: #222; font-size: 14px; font-weight: 700;}
+        /* BAGIAN KANAN - FORM REGISTRASI (Menyatu tanpa sekat & tanpa shadow berlebih) */
+        .right-side {
+            flex: 1;
+            max-width: 500px;
+            background-color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px; /* Sedikit dikecilkan agar isi form registrasi muat satu layar */
+            box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+            z-index: 2;
+        }
+        .login-box { 
+            width: 100%; 
+            max-width: 380px; /* Ukuran kotak isian dipertahankan sama persis dengan login */
+            text-align: center; 
+        }
+        
+        .logo-instansi { width: 60px; height: auto; margin-bottom: 10px; }
+        .login-box h2 { color: #238b45; margin-top: 0; margin-bottom: 5px; font-size: 24px; font-weight: bold;}
+        .login-box p.subtitle { color: #666; font-size: 14px; margin-bottom: 20px; margin-top: 0; }
+        
+        .alert-error { background-color: rgba(255, 235, 238, 0.9); color: #c62828; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; text-align: left; border: 1px solid #ffcdd2; }
+        
+        /* SPASI UNTUK SETIAP INPUT DIPERKETAT AGAR ANTI-SCROLL */
+        .input-group { margin-bottom: 12px; text-align: left; }
+        .input-group label { display: block; margin-bottom: 5px; color: #333; font-size: 13px; font-weight: bold; }
         
         .input-wrapper { 
             display: flex; 
-            border: 1px solid rgba(200, 200, 200, 0.8); 
+            border: 1px solid #dcdcdc; 
             border-radius: 8px; 
-            background-color: rgba(255, 255, 255, 0.9); 
+            background-color: #fdfdfd; 
             overflow: hidden;
             transition: 0.3s;
         }
-        .input-wrapper:focus-within { border-color: #1abc9c; box-shadow: 0 0 8px rgba(26, 188, 156, 0.3); background-color: #ffffff;}
-        .input-wrapper .icon { padding: 12px 15px; background-color: rgba(241, 241, 241, 0.8); color: #2e7d32; border-right: 1px solid rgba(200, 200, 200, 0.5); display: flex; align-items: center; width: 20px; justify-content: center; }
-        .input-wrapper input { flex: 1; padding: 12px 15px; border: none; background: transparent; outline: none; font-size: 14px; color: #333; width: 100%;}
+        .input-wrapper:focus-within { border-color: #1abc9c; box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.1); background-color: #ffffff;}
+        .input-wrapper .icon { padding: 10px 15px; color: #888; display: flex; align-items: center; justify-content: center; }
+        .input-wrapper input { flex: 1; padding: 10px 15px 10px 0; border: none; background: transparent; outline: none; font-size: 13px; color: #333; width: 100%;}
         
-        input::-ms-reveal,
-        input::-ms-clear { display: none; }
+        input::-ms-reveal, input::-ms-clear { display: none; }
         
         .input-wrapper .icon-toggle {
-            padding: 12px 15px;
+            padding: 10px 15px;
             color: #888;
             cursor: pointer;
             display: flex;
@@ -173,112 +212,36 @@ if (isset($_POST['submit_registrasi'])) {
         .input-wrapper .icon-toggle:hover { color: #1abc9c; }
 
         /* KOTAK NOMOR ANGGOTA KHUSUS (Readonly) */
-        .wrapper-readonly { background-color: #e9ecef !important; border-color: #ccc !important; }
-        .wrapper-readonly input { font-weight: bold; color: #16a085 !important; font-size: 16px; letter-spacing: 1px; cursor: not-allowed; text-align: center;}
+        .wrapper-readonly { background-color: #f1f4f8 !important; border-color: #d1d9e6 !important; }
+        .wrapper-readonly input { font-weight: bold; color: #16a085 !important; letter-spacing: 1px; cursor: not-allowed; }
         
-        /* PEMBUNGKUS AREA TENGAH UNTUK TOMBOL DAN NOTE */
-        .center-action {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 12px;
-        }
+        .center-action { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
 
         .btn-generate {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 25px; 
-            font-size: 13px;
-            font-weight: bold;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: 0.2s;
-            box-shadow: 0 4px 6px rgba(52,152,219,0.3);
+            background-color: #3498db; color: white; border: none; padding: 6px 12px;
+            border-radius: 20px; font-size: 11px; font-weight: bold; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 5px; transition: 0.2s; box-shadow: 0 2px 4px rgba(52,152,219,0.3);
         }
-        .btn-generate:hover { background-color: #2980b9; transform: translateY(-2px); box-shadow: 0 6px 10px rgba(52,152,219,0.4);}
+        .btn-generate:hover { background-color: #2980b9; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(52,152,219,0.4);}
         
-        .note-salin {
-            font-size: 12px;
-            color: #e74c3c;
-            margin-top: 10px;
-            font-weight: 700;
-            text-align: center;
-            display: none; 
-            animation: fadeIn 0.5s;
-        }
-        
-        /* CATATAN KECIL DI BAWAH INPUT */
-        .input-note {
-            font-size: 11px;
-            color: #7f8c8d;
-            margin-top: 6px;
-            font-weight: 600;
-            line-height: 1.4;
-        }
+        .note-salin { font-size: 11px; color: #e74c3c; font-weight: 700; text-align: right; display: none; animation: fadeIn 0.5s; margin-left: 5px;}
+        .input-note { font-size: 11px; color: #7f8c8d; margin-top: 4px; font-weight: 600; line-height: 1.2; }
 
-        .button-group { display: flex; gap: 15px; margin-top: 35px; }
-        .btn-back, .btn-submit { background-color: #1abc9c; color: white; border: none; border-radius: 25px; cursor: pointer; text-decoration: none; transition: 0.3s; text-align: center; box-shadow: 0 4px 6px rgba(26,188,156,0.2);}
-        .btn-back { padding: 12px 25px; display: flex; align-items: center; justify-content: center;}
-        .btn-submit { padding: 12px; flex: 1; font-weight: bold; letter-spacing: 1px; font-size: 15px;}
-        .btn-back:hover, .btn-submit:hover { background-color: #16a085; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(26,188,156,0.3);}
-        
-        .alert { padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; font-weight: 500;}
-        .alert.error { background-color: rgba(253, 237, 237, 0.9); color: #e53935; border: 1px solid #ffcdd2; border-left: 5px solid #e53935; }
-
-        /* KOTAK INFO LINGKUNGAN */
-        .info-box {
-            position: relative;
-            z-index: 10;
-            margin-top: 25px;
-            background: linear-gradient(135deg, rgba(26, 188, 156, 0.85) 0%, rgba(46, 125, 50, 0.85) 100%);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            width: 100%;
-            max-width: 550px;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            box-sizing: border-box;
-            animation: fadeInUp 0.8s ease-out;
-        }
-        .info-box i { font-size: 30px; color: #dcedc8; }
-        .info-box p { margin: 0; font-size: 14px; font-weight: 500; line-height: 1.5; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .button-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-back, .btn-submit { color: white; border: none; border-radius: 8px; cursor: pointer; text-decoration: none; transition: 0.3s; text-align: center; font-size: 14px; font-weight: bold;}
+        .btn-back { background-color: #95a5a6; padding: 12px 20px; display: flex; align-items: center; justify-content: center;}
+        .btn-submit { background-color: #1abc9c; padding: 12px; flex: 1; box-shadow: 0 4px 6px rgba(26,188,156,0.2);}
+        .btn-back:hover { background-color: #7f8c8d; transform: translateY(-2px);}
+        .btn-submit:hover { background-color: #16a085; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(26,188,156,0.3);}
 
         /* CUSTOM TOAST NOTIFICATION */
         .toast-overlay-box {
-            visibility: hidden;
-            min-width: 250px;
-            background-color: #2c3e50;
-            color: #fff;
-            text-align: center;
-            border-radius: 10px;
-            padding: 16px 20px;
-            position: fixed;
-            z-index: 10000;
-            left: 50%;
-            bottom: 30px;
-            transform: translateX(-50%);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            pointer-events: none;
+            visibility: hidden; min-width: 250px; background-color: #2c3e50; color: #fff; text-align: center;
+            border-radius: 10px; padding: 16px 20px; position: fixed; z-index: 10000; left: 50%; bottom: 30px;
+            transform: translateX(-50%); box-shadow: 0 5px 15px rgba(0,0,0,0.3); font-size: 14px;
+            display: flex; align-items: center; gap: 10px; pointer-events: none;
         }
-        .toast-overlay-box.show {
-            visibility: visible;
-            animation: fadein 0.5s, fadeout 0.5s 4.5s;
-        }
+        .toast-overlay-box.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 4.5s; }
         .toast-overlay-box i { font-size: 24px; color: #2ecc71; }
         .toast-overlay-box div { text-align: left; line-height: 1.4; }
 
@@ -287,166 +250,157 @@ if (isset($_POST['submit_registrasi'])) {
 
         /* STYLING CUSTOM POP-UP SUKSES */
         .modal-success-overlay {
-            display: flex; 
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.7); 
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
+            display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7); z-index: 9999; justify-content: center; align-items: center;
         }
         .modal-success-box {
-            background: #fff;
-            width: 400px;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            text-align: center;
-            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: #fff; width: 400px; border-radius: 16px; overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4); text-align: center; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .modal-success-header {
-            background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
-            padding: 35px 20px 25px;
-            color: white;
-        }
+        .modal-success-header { background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%); padding: 35px 20px 25px; color: white; }
         .modal-success-header i { font-size: 65px; margin-bottom: 15px; text-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .modal-success-header h3 { margin: 0; font-size: 24px; font-weight: 800;}
         .modal-success-body { padding: 30px; }
         .modal-success-body p { color: #555; font-size: 15px; margin-bottom: 20px; line-height: 1.6; }
         
         .btn-modal-login {
-            background: #2e7d32;
-            color: white;
-            border: none;
-            padding: 14px 30px;
-            border-radius: 30px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-            width: 100%;
-            box-shadow: 0 4px 10px rgba(46, 125, 50, 0.3);
+            background: #2e7d32; color: white; border: none; padding: 14px 30px; border-radius: 30px;
+            font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.3s; width: 100%; box-shadow: 0 4px 10px rgba(46, 125, 50, 0.3);
         }
         .btn-modal-login:hover { background: #1b5e20; transform: translateY(-3px); box-shadow: 0 6px 15px rgba(46, 125, 50, 0.4); }
 
         @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         @keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
-        @keyframes fadeInUp { 0% { transform: translateY(20px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
 
-        @media screen and (max-width: 768px) {
-            body { padding: 20px 15px; }
-            .container { padding: 30px 20px; max-width: 340px; z-index: 10; }
-            .title-wrapper h2 { font-size: 20px; }
-            .info-box { flex-direction: column; text-align: center; gap: 10px; padding: 15px; max-width: 340px; }
-            .info-box i { font-size: 26px; }
-            .info-box p { font-size: 13px; }
-            .input-wrapper .icon { padding: 10px 12px; }
-            .input-wrapper input { padding: 10px 12px; font-size: 13px; }
+        /* =======================================================
+           RESPONSIVE MOBILE (HP) - CLEAN & SIMPLE (SAMA PERSIS LOGIN)
+           ======================================================= */
+        @media screen and (max-width: 850px) {
+            .split-layout { 
+                display: flex; 
+                flex-direction: column;
+            }
+            .left-side { 
+                display: none; 
+            }
+            .right-side { 
+                max-width: 100%; 
+                min-height: 100vh;
+                min-height: 100dvh; 
+                padding: 20px;
+                box-shadow: none;
+            }
+            .login-box {
+                max-width: 400px; 
+            }
             .modal-success-box { width: 90%; max-width: 340px; }
             .modal-success-header i { font-size: 50px; }
             .modal-success-header h3 { font-size: 18px; }
             .modal-success-body { padding: 20px; }
-            .button-group { margin-top: 25px; gap: 10px;}
-            .btn-back, .btn-submit { padding: 12px; font-size: 14px;}
             .toast-overlay-box { min-width: 80%; bottom: 20px; }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="title-wrapper">
-        <h2>FORM REGISTRASI</h2>
-        <div class="title-line"></div>
+    <div class="split-layout">
+        <div class="left-side">
+            <div class="left-content">
+                <i class="fa-solid fa-tree tree-illustration"></i>
+                <h1>BANK SAMPAH <br> INDUK</h1>
+                <p>Dinas Lingkungan Hidup Kab. Lebak</p>
+            </div>
+        </div>
+
+        <div class="right-side">
+            <div class="login-box">
+                <img src="assets/logo-lebak.png" alt="Logo Instansi" class="logo-instansi">
+                <h2>Form Registrasi</h2>
+                <p class="subtitle">Lengkapi data diri Anda di bawah ini</p>
+                
+                <?php if (!empty($pesan)) echo $pesan; ?>
+                
+                <form action="" method="POST">
+                    <div class="input-group">
+                        <label>Nama Lengkap / Instansi</label>
+                        <div class="input-wrapper">
+                            <span class="icon"><i class="fa fa-user-edit"></i></span>
+                            <input type="text" name="nama_lengkap" placeholder="Masukkan Nama Lengkap Anda" 
+                                   value="<?php echo isset($_POST['nama_lengkap']) ? htmlspecialchars($_POST['nama_lengkap']) : ''; ?>" required>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Nomor Telepon / WhatsApp</label>
+                        <div class="input-wrapper">
+                            <span class="icon"><i class="fa fa-phone"></i></span>
+                            <input type="text" name="nomor_telepon" placeholder="Contoh: 081234567890" 
+                                   value="<?php echo isset($_POST['nomor_telepon']) ? htmlspecialchars($_POST['nomor_telepon']) : ''; ?>" required>
+                        </div>
+                        <div class="input-note">
+                            <i class="fa fa-info-circle" style="color: #3498db;"></i> Note: Beri strip (-) jika tidak memiliki Nomor Telepon.
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Nomor Anggota (Otomatis)</label>
+                        <div class="input-wrapper wrapper-readonly">
+                            <span class="icon"><i class="fa fa-id-card"></i></span>
+                            <input type="text" name="username" id="nomor_anggota" placeholder="Klik tombol di bawah ini" value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>" readonly required>
+                        </div>
+                        
+                        <div class="center-action">
+                            <button type="button" class="btn-generate" onclick="buatNomorAnggota()">
+                                <i class="fa fa-cog"></i> Buat Nomor Anggota Baru
+                            </button>
+                            <div class="note-salin" id="note-salin">
+                                <i class="fa fa-exclamation-circle"></i> Salin dan simpan Nomor Anggota ini.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Password</label>
+                        <div class="input-wrapper">
+                            <span class="icon"><i class="fa fa-lock"></i></span>
+                            <input type="password" name="password" id="input-password" placeholder="Buat Password Anda" required>
+                            
+                            <span class="icon-toggle" 
+                                  onmousedown="showPassword('input-password', 'icon-pw')" 
+                                  onmouseup="hidePassword('input-password', 'icon-pw')"
+                                  onmouseleave="hidePassword('input-password', 'icon-pw')"
+                                  ontouchstart="showPassword('input-password', 'icon-pw')"
+                                  ontouchend="hidePassword('input-password', 'icon-pw')">
+                                <i class="fa fa-eye" id="icon-pw"></i>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group" style="margin-bottom: 5px;">
+                        <label>Konfirmasi Password</label>
+                        <div class="input-wrapper">
+                            <span class="icon"><i class="fa fa-lock"></i></span>
+                            <input type="password" name="konfirmasi_password" id="input-konfirmasi" placeholder="Ketik Ulang Password Anda" required>
+                            
+                            <span class="icon-toggle" 
+                                  onmousedown="showPassword('input-konfirmasi', 'icon-konfirm')" 
+                                  onmouseup="hidePassword('input-konfirmasi', 'icon-konfirm')"
+                                  onmouseleave="hidePassword('input-konfirmasi', 'icon-konfirm')"
+                                  ontouchstart="showPassword('input-konfirmasi', 'icon-konfirm')"
+                                  ontouchend="hidePassword('input-konfirmasi', 'icon-konfirm')">
+                                <i class="fa fa-eye" id="icon-konfirm"></i>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <a href="login.php" class="btn-back" title="Kembali ke Login"><i class="fa fa-arrow-left"></i></a>
+                        <button type="submit" name="submit_registrasi" class="btn-submit">DAFTAR SEKARANG</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-    
-    <?php echo $pesan; ?>
-    
-    <form action="" method="POST">
-        <div class="input-group">
-            <label>Nama Lengkap / Instansi</label>
-            <div class="input-wrapper">
-                <span class="icon"><i class="fa fa-user-edit"></i></span>
-                <input type="text" name="nama_lengkap" placeholder="Masukkan Nama Lengkap Anda" 
-                       value="<?php echo isset($_POST['nama_lengkap']) ? htmlspecialchars($_POST['nama_lengkap']) : ''; ?>" required>
-            </div>
-        </div>
-
-        <div class="input-group">
-            <label>Nomor Telepon / WhatsApp</label>
-            <div class="input-wrapper">
-                <span class="icon"><i class="fa fa-phone"></i></span>
-                <input type="text" name="nomor_telepon" placeholder="Contoh: 081234567890" 
-                       value="<?php echo isset($_POST['nomor_telepon']) ? htmlspecialchars($_POST['nomor_telepon']) : ''; ?>" required>
-            </div>
-            <div class="input-note">
-                <i class="fa fa-info-circle" style="color: #3498db;"></i> Note: Beri tanda strip (-) jika Anda tidak memiliki Nomor Telepon.
-            </div>
-        </div>
-
-        <div class="input-group">
-            <label>Nomor Anggota (Otomatis)</label>
-            <div class="input-wrapper wrapper-readonly">
-                <span class="icon"><i class="fa fa-id-card"></i></span>
-                <input type="text" name="username" id="nomor_anggota" placeholder="Klik tombol di bawah ini" value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>" readonly required>
-            </div>
-            
-            <div class="center-action">
-                <button type="button" class="btn-generate" onclick="buatNomorAnggota()">
-                    <i class="fa fa-cog"></i> Buat Nomor Anggota Baru
-                </button>
-                <div class="note-salin" id="note-salin">
-                    <i class="fa fa-exclamation-circle"></i> Note: Salin dan simpan Nomor Anggota ini untuk Login.
-                </div>
-            </div>
-        </div>
-        
-        <div class="input-group">
-            <label>Password</label>
-            <div class="input-wrapper">
-                <span class="icon"><i class="fa fa-lock"></i></span>
-                <input type="password" name="password" id="input-password" placeholder="Buat Password Anda" required>
-                
-                <span class="icon-toggle" 
-                      onmousedown="showPassword('input-password', 'icon-pw')" 
-                      onmouseup="hidePassword('input-password', 'icon-pw')"
-                      onmouseleave="hidePassword('input-password', 'icon-pw')"
-                      ontouchstart="showPassword('input-password', 'icon-pw')"
-                      ontouchend="hidePassword('input-password', 'icon-pw')">
-                    <i class="fa fa-eye" id="icon-pw"></i>
-                </span>
-            </div>
-        </div>
-        
-        <div class="input-group">
-            <label>Konfirmasi Password</label>
-            <div class="input-wrapper">
-                <span class="icon"><i class="fa fa-lock"></i></span>
-                <input type="password" name="konfirmasi_password" id="input-konfirmasi" placeholder="Ketik Ulang Password Anda" required>
-                
-                <span class="icon-toggle" 
-                      onmousedown="showPassword('input-konfirmasi', 'icon-konfirm')" 
-                      onmouseup="hidePassword('input-konfirmasi', 'icon-konfirm')"
-                      onmouseleave="hidePassword('input-konfirmasi', 'icon-konfirm')"
-                      ontouchstart="showPassword('input-konfirmasi', 'icon-konfirm')"
-                      ontouchend="hidePassword('input-konfirmasi', 'icon-konfirm')">
-                    <i class="fa fa-eye" id="icon-konfirm"></i>
-                </span>
-            </div>
-        </div>
-        
-        <div class="button-group">
-            <a href="login.php" class="btn-back"><i class="fa fa-arrow-left"></i></a>
-            <button type="submit" name="submit_registrasi" class="btn-submit">DAFTAR SEKARANG</button>
-        </div>
-    </form>
-</div>
-
-<div class="info-box">
-    <i class="fa fa-leaf"></i>
-    <p><b>Mari Bersama Menjaga Bumi Kita!</b><br>
-    Setiap sampah yang Anda tabung hari ini adalah langkah kecil untuk lingkungan hidup yang lebih hijau esok hari.</p>
-</div>
 
 <div id="customToast" class="toast-overlay-box">
     <i class="fa fa-check-circle"></i>
@@ -471,33 +425,23 @@ if (isset($_POST['submit_registrasi'])) {
 <?php endif; ?>
 
 <script>
-    // PENGENDALI TOMBOL BACK BROWSER
     window.history.pushState("registrasi", null, window.location.href);
-    window.onpopstate = function(event) {
-        window.location.href = "login.php";
-    };
+    window.onpopstate = function(event) { window.location.href = "login.php"; };
 
-    // FUNGSI MENAMPILKAN TOAST (PENGGANTI ALERT)
     function showToast(pesanUtama, pesanSub) {
         var toast = document.getElementById("customToast");
         var msg = document.getElementById("toastMessage");
         
         msg.innerHTML = "<b>" + pesanUtama + "</b><br><span style='font-size:12px; color:#bdc3c7;'>" + pesanSub + "</span>";
         toast.className = "toast-overlay-box show";
-        
-        // Hilangkan otomatis setelah 5 detik
         setTimeout(function(){ toast.className = "toast-overlay-box"; }, 5000);
     }
 
-    // FITUR GENERATE NOMOR ANGGOTA 
     function buatNomorAnggota() {
         var inputNomor = document.getElementById('nomor_anggota');
         var note = document.getElementById('note-salin');
         
-        // Memasukkan variabel PHP yang sudah dikalkulasi ke dalam input
         inputNomor.value = "<?php echo $next_nomor; ?>";
-        
-        // Memunculkan tulisan note merah
         note.style.display = "block";
         
         var pesanUtama = "Nomor Anggota berhasil dibuat!";
@@ -522,7 +466,6 @@ if (isset($_POST['submit_registrasi'])) {
         }
     }
 
-    // FITUR MATA PASSWORD
     function showPassword(inputId, iconId) {
         document.getElementById(inputId).type = "text";
         document.getElementById(iconId).classList.replace("fa-eye", "fa-eye-slash");
