@@ -156,7 +156,7 @@ if (isset($_POST['submit_registrasi'])) {
             letter-spacing: 1px;
         }
 
-        /* BAGIAN KANAN - FORM REGISTRASI (Menyatu tanpa sekat & tanpa shadow berlebih) */
+        /* BAGIAN KANAN - FORM REGISTRASI */
         .right-side {
             flex: 1;
             max-width: 500px;
@@ -164,17 +164,22 @@ if (isset($_POST['submit_registrasi'])) {
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 30px; /* Sedikit dikecilkan agar isi form registrasi muat satu layar */
+            padding: 30px; 
             box-shadow: -10px 0 30px rgba(0,0,0,0.1);
             z-index: 2;
         }
         .login-box { 
             width: 100%; 
-            max-width: 380px; /* Ukuran kotak isian dipertahankan sama persis dengan login */
+            max-width: 380px; 
             text-align: center; 
         }
         
-        .logo-instansi { width: 60px; height: auto; margin-bottom: 10px; }
+        /* PENGATURAN LOGO DAN HEADER */
+        .mobile-header-logo { text-align: center; margin-bottom: 15px; }
+        .logo-wrapper { display: inline-flex; align-items: center; justify-content: center; }
+        .logo-instansi { width: 70px; height: auto; }
+        .form-container-mobile { width: 100%; box-sizing: border-box; }
+
         .login-box h2 { color: #238b45; margin-top: 0; margin-bottom: 5px; font-size: 24px; font-weight: bold;}
         .login-box p.subtitle { color: #666; font-size: 14px; margin-bottom: 20px; margin-top: 0; }
         
@@ -273,7 +278,7 @@ if (isset($_POST['submit_registrasi'])) {
         @keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
 
         /* =======================================================
-           RESPONSIVE MOBILE (HP) - CLEAN & SIMPLE (SAMA PERSIS LOGIN)
+           RESPONSIVE MOBILE (HP) - HEADER HIJAU & NO SCROLL
            ======================================================= */
         @media screen and (max-width: 850px) {
             .split-layout { 
@@ -287,12 +292,42 @@ if (isset($_POST['submit_registrasi'])) {
                 max-width: 100%; 
                 min-height: 100vh;
                 min-height: 100dvh; 
-                padding: 20px;
+                padding: 0; 
                 box-shadow: none;
+                align-items: flex-start;
             }
             .login-box {
-                max-width: 400px; 
+                max-width: 100%; 
+                width: 100%;
             }
+            
+            /* HEADER HIJAU DIBELAKANG LOGO KHUSUS HP */
+            .mobile-header-logo {
+                background: linear-gradient(135deg, #1abc9c, #2e7d32);
+                padding: 35px 20px;
+                border-radius: 0 0 35px 35px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+                margin-bottom: 30px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .logo-wrapper {
+                background-color: white;
+                width: 90px;
+                height: 90px;
+                border-radius: 50%;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            }
+            .logo-instansi { 
+                width: 60px; 
+            }
+            
+            .form-container-mobile {
+                padding: 0 25px 30px 25px;
+                max-width: 450px;
+                margin: 0 auto;
+            }
+
             .modal-success-box { width: 90%; max-width: 340px; }
             .modal-success-header i { font-size: 50px; }
             .modal-success-header h3 { font-size: 18px; }
@@ -314,90 +349,97 @@ if (isset($_POST['submit_registrasi'])) {
 
         <div class="right-side">
             <div class="login-box">
-                <img src="assets/logo-lebak.png" alt="Logo Instansi" class="logo-instansi">
-                <h2>Form Registrasi</h2>
-                <p class="subtitle">Lengkapi data diri Anda di bawah ini</p>
-                
-                <?php if (!empty($pesan)) echo $pesan; ?>
-                
-                <form action="" method="POST">
-                    <div class="input-group">
-                        <label>Nama Lengkap / Instansi</label>
-                        <div class="input-wrapper">
-                            <span class="icon"><i class="fa fa-user-edit"></i></span>
-                            <input type="text" name="nama_lengkap" placeholder="Masukkan Nama Lengkap Anda" 
-                                   value="<?php echo isset($_POST['nama_lengkap']) ? htmlspecialchars($_POST['nama_lengkap']) : ''; ?>" required>
-                        </div>
+                <div class="mobile-header-logo">
+                    <div class="logo-wrapper">
+                        <img src="assets/logo-lebak.png" alt="Logo Instansi" class="logo-instansi">
                     </div>
-
-                    <div class="input-group">
-                        <label>Nomor Telepon / WhatsApp</label>
-                        <div class="input-wrapper">
-                            <span class="icon"><i class="fa fa-phone"></i></span>
-                            <input type="text" name="nomor_telepon" placeholder="Contoh: 081234567890" 
-                                   value="<?php echo isset($_POST['nomor_telepon']) ? htmlspecialchars($_POST['nomor_telepon']) : ''; ?>" required>
-                        </div>
-                        <div class="input-note">
-                            <i class="fa fa-info-circle" style="color: #3498db;"></i> Note: Beri strip (-) jika tidak memiliki Nomor Telepon.
-                        </div>
-                    </div>
-
-                    <div class="input-group">
-                        <label>Nomor Anggota (Otomatis)</label>
-                        <div class="input-wrapper wrapper-readonly">
-                            <span class="icon"><i class="fa fa-id-card"></i></span>
-                            <input type="text" name="username" id="nomor_anggota" placeholder="Klik tombol di bawah ini" value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>" readonly required>
-                        </div>
-                        
-                        <div class="center-action">
-                            <button type="button" class="btn-generate" onclick="buatNomorAnggota()">
-                                <i class="fa fa-cog"></i> Buat Nomor Anggota Baru
-                            </button>
-                            <div class="note-salin" id="note-salin">
-                                <i class="fa fa-exclamation-circle"></i> Salin dan simpan Nomor Anggota ini.
+                </div>
+                
+                <div class="form-container-mobile">
+                    <h2>Form Registrasi</h2>
+                    <p class="subtitle">Lengkapi data diri Anda di bawah ini</p>
+                    
+                    <?php if (!empty($pesan)) echo $pesan; ?>
+                    
+                    <form action="" method="POST">
+                        <div class="input-group">
+                            <label>Nama Lengkap / Instansi</label>
+                            <div class="input-wrapper">
+                                <span class="icon"><i class="fa fa-user-edit"></i></span>
+                                <input type="text" name="nama_lengkap" placeholder="Masukkan Nama Lengkap Anda" 
+                                       value="<?php echo isset($_POST['nama_lengkap']) ? htmlspecialchars($_POST['nama_lengkap']) : ''; ?>" required>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label>Password</label>
-                        <div class="input-wrapper">
-                            <span class="icon"><i class="fa fa-lock"></i></span>
-                            <input type="password" name="password" id="input-password" placeholder="Buat Password Anda" required>
-                            
-                            <span class="icon-toggle" 
-                                  onmousedown="showPassword('input-password', 'icon-pw')" 
-                                  onmouseup="hidePassword('input-password', 'icon-pw')"
-                                  onmouseleave="hidePassword('input-password', 'icon-pw')"
-                                  ontouchstart="showPassword('input-password', 'icon-pw')"
-                                  ontouchend="hidePassword('input-password', 'icon-pw')">
-                                <i class="fa fa-eye" id="icon-pw"></i>
-                            </span>
+
+                        <div class="input-group">
+                            <label>Nomor Telepon / WhatsApp</label>
+                            <div class="input-wrapper">
+                                <span class="icon"><i class="fa fa-phone"></i></span>
+                                <input type="text" name="nomor_telepon" placeholder="Contoh: 081234567890" 
+                                       value="<?php echo isset($_POST['nomor_telepon']) ? htmlspecialchars($_POST['nomor_telepon']) : ''; ?>" required>
+                            </div>
+                            <div class="input-note">
+                                <i class="fa fa-info-circle" style="color: #3498db;"></i> Note: Beri strip (-) jika tidak memiliki Nomor Telepon.
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="input-group" style="margin-bottom: 5px;">
-                        <label>Konfirmasi Password</label>
-                        <div class="input-wrapper">
-                            <span class="icon"><i class="fa fa-lock"></i></span>
-                            <input type="password" name="konfirmasi_password" id="input-konfirmasi" placeholder="Ketik Ulang Password Anda" required>
+
+                        <div class="input-group">
+                            <label>Nomor Anggota (Otomatis)</label>
+                            <div class="input-wrapper wrapper-readonly">
+                                <span class="icon"><i class="fa fa-id-card"></i></span>
+                                <input type="text" name="username" id="nomor_anggota" placeholder="Klik tombol di bawah ini" value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>" readonly required>
+                            </div>
                             
-                            <span class="icon-toggle" 
-                                  onmousedown="showPassword('input-konfirmasi', 'icon-konfirm')" 
-                                  onmouseup="hidePassword('input-konfirmasi', 'icon-konfirm')"
-                                  onmouseleave="hidePassword('input-konfirmasi', 'icon-konfirm')"
-                                  ontouchstart="showPassword('input-konfirmasi', 'icon-konfirm')"
-                                  ontouchend="hidePassword('input-konfirmasi', 'icon-konfirm')">
-                                <i class="fa fa-eye" id="icon-konfirm"></i>
-                            </span>
+                            <div class="center-action">
+                                <button type="button" class="btn-generate" onclick="buatNomorAnggota()">
+                                    <i class="fa fa-cog"></i> Buat Nomor Anggota Baru
+                                </button>
+                                <div class="note-salin" id="note-salin">
+                                    <i class="fa fa-exclamation-circle"></i> Salin dan simpan Nomor Anggota ini.
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="button-group">
-                        <a href="login.php" class="btn-back" title="Kembali ke Login"><i class="fa fa-arrow-left"></i></a>
-                        <button type="submit" name="submit_registrasi" class="btn-submit">DAFTAR SEKARANG</button>
-                    </div>
-                </form>
+                        
+                        <div class="input-group">
+                            <label>Password</label>
+                            <div class="input-wrapper">
+                                <span class="icon"><i class="fa fa-lock"></i></span>
+                                <input type="password" name="password" id="input-password" placeholder="Buat Password Anda" required>
+                                
+                                <span class="icon-toggle" 
+                                      onmousedown="showPassword('input-password', 'icon-pw')" 
+                                      onmouseup="hidePassword('input-password', 'icon-pw')"
+                                      onmouseleave="hidePassword('input-password', 'icon-pw')"
+                                      ontouchstart="showPassword('input-password', 'icon-pw')"
+                                      ontouchend="hidePassword('input-password', 'icon-pw')">
+                                    <i class="fa fa-eye" id="icon-pw"></i>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="input-group" style="margin-bottom: 5px;">
+                            <label>Konfirmasi Password</label>
+                            <div class="input-wrapper">
+                                <span class="icon"><i class="fa fa-lock"></i></span>
+                                <input type="password" name="konfirmasi_password" id="input-konfirmasi" placeholder="Ketik Ulang Password Anda" required>
+                                
+                                <span class="icon-toggle" 
+                                      onmousedown="showPassword('input-konfirmasi', 'icon-konfirm')" 
+                                      onmouseup="hidePassword('input-konfirmasi', 'icon-konfirm')"
+                                      onmouseleave="hidePassword('input-konfirmasi', 'icon-konfirm')"
+                                      ontouchstart="showPassword('input-konfirmasi', 'icon-konfirm')"
+                                      ontouchend="hidePassword('input-konfirmasi', 'icon-konfirm')">
+                                    <i class="fa fa-eye" id="icon-konfirm"></i>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="button-group">
+                            <a href="login.php" class="btn-back" title="Kembali ke Login"><i class="fa fa-arrow-left"></i></a>
+                            <button type="submit" name="submit_registrasi" class="btn-submit">DAFTAR SEKARANG</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

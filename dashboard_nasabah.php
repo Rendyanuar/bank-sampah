@@ -445,7 +445,7 @@ if (isset($_POST['tarik_tunai'])) {
                 <h3 style="margin:0; color:white; text-align:center;"><i class="fa fa-money-bill-wave"></i> Form Penarikan</h3>
             </div>
             <div class="modal-body" style="padding-top: 20px;">
-                <form method="POST" action="">
+                <form method="POST" action="" onsubmit="return validasiTarik()">
                     <div class="form-group">
                         <label>Pilih Metode Transfer</label>
                         <select name="metode" id="pilih_metode" onchange="ubahLabelTujuan()" required>
@@ -472,7 +472,7 @@ if (isset($_POST['tarik_tunai'])) {
                     </div>
                     <div class="form-group">
                         <label>Nominal Penarikan (Rp)</label>
-                        <input type="number" name="nominal" placeholder="Minimal 10000" min="10000" max="<?php echo $saldo_nasabah; ?>" required>
+                        <input type="number" id="input_nominal" name="nominal" placeholder="Minimal 10000" required>
                     </div>
                     <p style="font-size:12px; color:#e74c3c; text-align:left; margin-bottom:15px; margin-top:-5px;">
                         <i>*Uang akan dikirim manual oleh Admin.</i>
@@ -486,20 +486,18 @@ if (isset($_POST['tarik_tunai'])) {
         </div>
     </div>
 
-    <?php if (!empty($notif_sukses) || !empty($notif_gagal)) : ?>
-    <div id="notifModal" class="modal-overlay" style="display: flex;">
+    <div id="notifModal" class="modal-overlay" style="display: <?php echo (!empty($notif_sukses) || !empty($notif_gagal)) ? 'flex' : 'none'; ?>;">
         <div class="modal-box modal-box-small">
-            <div class="<?php echo !empty($notif_sukses) ? 'modal-header-green' : 'modal-header-red'; ?>">
-                <i class="<?php echo !empty($notif_sukses) ? 'fa fa-check-circle' : 'fa fa-times-circle'; ?>"></i>
+            <div id="notifHeader" class="<?php echo !empty($notif_sukses) ? 'modal-header-green' : 'modal-header-red'; ?>">
+                <i id="notifIcon" class="<?php echo !empty($notif_sukses) ? 'fa fa-check-circle' : 'fa fa-times-circle'; ?>"></i>
             </div>
             <div class="modal-body" style="text-align:center;">
-                <h3><?php echo !empty($notif_sukses) ? 'Berhasil!' : 'Gagal!'; ?></h3>
-                <p><?php echo !empty($notif_sukses) ? $notif_sukses : $notif_gagal; ?></p>
-                <button class="btn-confirm-green" style="width: 100%; <?php echo !empty($notif_gagal) ? 'background:#e74c3c;' : ''; ?>" onclick="tutupNotif()">Tutup</button>
+                <h3 id="notifTitle"><?php echo !empty($notif_sukses) ? 'Berhasil!' : (!empty($notif_gagal) ? 'Gagal!' : 'Peringatan!'); ?></h3>
+                <p id="notifMessage"><?php echo !empty($notif_sukses) ? $notif_sukses : $notif_gagal; ?></p>
+                <button id="notifBtn" class="btn-confirm-green" style="width: 100%; <?php echo !empty($notif_gagal) ? 'background:#e74c3c;' : ''; ?>" onclick="tutupNotif()">Tutup</button>
             </div>
         </div>
     </div>
-    <?php endif; ?>
 
     <div id="customModal" class="modal-overlay">
         <div class="modal-box modal-box-small">
@@ -585,20 +583,61 @@ if (isset($_POST['tarik_tunai'])) {
         }
     }
 
+    // --- LOGIKA MODAL POP-UP DAN VALIDASI PENARIKAN (UPDATE) ---
     function showStrukModal() { document.getElementById('strukModal').style.display = 'flex'; }
     function closeStrukModal() { document.getElementById('strukModal').style.display = 'none'; }
+    
+    // Cek saldo dulu sebelum membuka form penarikan
     function bukaModalTarik() {
+        var saldo = <?php echo $saldo_nasabah; ?>;
+        if (saldo < 10000) {
+            closeStrukModal();
+            var pesan = saldo <= 0 ? "Maaf, saldo tabungan Anda Rp 0. Anda belum bisa melakukan penarikan tunai." : "Saldo Anda belum mencapai batas minimal penarikan (Rp 10.000).";
+            tampilkanNotifGagalJS(pesan);
+            return;
+        }
         document.getElementById('strukModal').style.display = 'none';
         document.getElementById('tarikModal').style.display = 'flex';
     }
+
     function kembaliKeStruk() {
         document.getElementById('tarikModal').style.display = 'none';
         document.getElementById('strukModal').style.display = 'flex';
     }
 
+    // Validasi nominal saat tombol Kirim Request ditekan
+    function validasiTarik() {
+        var nominal = parseInt(document.getElementById('input_nominal').value);
+        var saldo = <?php echo $saldo_nasabah; ?>;
+        
+        if (isNaN(nominal) || nominal < 10000) {
+            tampilkanNotifGagalJS("Minimal penarikan tunai adalah Rp 10.000.");
+            return false;
+        }
+        if (nominal > saldo) {
+            tampilkanNotifGagalJS("Maaf, saldo Anda kurang. Saldo maksimal yang dapat Anda tarik saat ini adalah Rp " + saldo.toLocaleString('id-ID') + ".");
+            return false;
+        }
+        return true;
+    }
+
+    // Fungsi trigger Notifikasi Merah Custom
+    function tampilkanNotifGagalJS(pesan) {
+        document.getElementById('tarikModal').style.display = 'none';
+        document.getElementById('strukModal').style.display = 'none';
+        
+        document.getElementById('notifHeader').className = 'modal-header-red';
+        document.getElementById('notifIcon').className = 'fa fa-times-circle';
+        document.getElementById('notifTitle').innerText = 'Gagal!';
+        document.getElementById('notifMessage').innerText = pesan;
+        document.getElementById('notifBtn').style.background = '#e74c3c';
+        
+        document.getElementById('notifModal').style.display = 'flex';
+    }
+
     function tutupNotif() {
         document.getElementById('notifModal').style.display = 'none';
-        window.location.href = window.location.pathname;
+        window.location.href = window.location.pathname; // Hapus parameter POST/GET agar tidak refresh berulang
     }
 
     function showLogoutModal() { document.getElementById('customModal').style.display = 'flex'; }

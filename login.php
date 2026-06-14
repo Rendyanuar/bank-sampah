@@ -135,7 +135,12 @@ if (isset($_POST['submit_login'])) {
             text-align: center; 
         }
         
-        .logo-instansi { width: 70px; height: auto; margin-bottom: 15px; }
+        /* PENGATURAN LOGO DAN HEADER */
+        .mobile-header-logo { text-align: center; margin-bottom: 15px; }
+        .logo-wrapper { display: inline-flex; align-items: center; justify-content: center; }
+        .logo-instansi { width: 70px; height: auto; }
+        .form-container-mobile { width: 100%; box-sizing: border-box; }
+
         .login-box h2 { color: #238b45; margin-top: 0; margin-bottom: 5px; font-size: 28px; font-weight: bold;}
         .login-box p.subtitle { color: #666; font-size: 15px; margin-bottom: 35px; margin-top: 0; }
         
@@ -178,30 +183,55 @@ if (isset($_POST['submit_login'])) {
         .link-registrasi a { color: #1abc9c; text-decoration: none; font-weight: bold; }
 
         /* =======================================================
-           RESPONSIVE MOBILE (HP) - CLEAN & SIMPLE (SESUAI GAMBAR)
+           RESPONSIVE MOBILE (HP) - HEADER HIJAU & NO SCROLL
            ======================================================= */
         @media screen and (max-width: 850px) {
             .split-layout { 
                 display: flex; 
                 flex-direction: column;
             }
-            
-            /* Sembunyikan bagian kiri (gambar & pohon) sepenuhnya */
             .left-side { 
                 display: none; 
             }
-            
-            /* Form mengambil alih seluruh layar tanpa shadow */
             .right-side { 
                 max-width: 100%; 
                 min-height: 100vh;
-                min-height: 100dvh; /* Kunci ukuran layar penuh */
-                padding: 20px;
+                min-height: 100dvh; 
+                padding: 0; /* Nolkan padding agar header hijau mentok atas */
                 box-shadow: none;
+                align-items: flex-start;
+            }
+            .login-box {
+                max-width: 100%; 
+                width: 100%;
             }
             
-            .login-box {
-                max-width: 400px; /* Lebar optimal di HP */
+            /* HEADER HIJAU DIBELAKANG LOGO KHUSUS HP */
+            .mobile-header-logo {
+                background: linear-gradient(135deg, #1abc9c, #2e7d32);
+                padding: 35px 20px;
+                border-radius: 0 0 35px 35px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+                margin-bottom: 30px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .logo-wrapper {
+                background-color: white;
+                width: 90px;
+                height: 90px;
+                border-radius: 50%;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            }
+            .logo-instansi { 
+                width: 60px; 
+            }
+            
+            /* Pembungkus form isian */
+            .form-container-mobile {
+                padding: 0 25px 30px 25px;
+                max-width: 450px;
+                margin: 0 auto;
             }
         }
     </style>
@@ -219,49 +249,56 @@ if (isset($_POST['submit_login'])) {
 
         <div class="right-side">
             <div class="login-box">
-                <img src="assets/logo-lebak.png" alt="Logo Instansi" class="logo-instansi">
-                <h2>Selamat Datang</h2>
-                <p class="subtitle">Silakan masuk menggunakan akun Anda</p>
-                
-                <?php if (!empty($error)) : ?>
-                    <div class="alert-error"><i class="fa fa-exclamation-triangle"></i> <?php echo $error; ?></div>
-                <?php endif; ?>
-                
-                <form action="" method="POST">
-                    <div class="input-group">
-                        <label>Nomor Anggota / Telepon</label>
-                        <div class="input-wrapper">
-                            <span class="icon"><i class="fa fa-id-card"></i></span>
-                            <input type="text" name="username" placeholder="Masukkan No Anggota atau No Telepon" value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>" required>
-                        </div>
+                <div class="mobile-header-logo">
+                    <div class="logo-wrapper">
+                        <img src="assets/logo-lebak.png" alt="Logo Instansi" class="logo-instansi">
                     </div>
+                </div>
+                
+                <div class="form-container-mobile">
+                    <h2>Selamat Datang</h2>
+                    <p class="subtitle">Silakan masuk menggunakan akun Anda</p>
                     
-                    <div class="input-group" style="margin-bottom: 8px;">
-                        <label>Password</label>
-                        <div class="input-wrapper">
-                            <span class="icon"><i class="fa fa-lock"></i></span>
-                            <input type="password" name="password" id="input-password" placeholder="Masukkan Password" required>
-                            
-                            <span class="icon-toggle" 
-                                  onmousedown="showPassword('input-password', 'icon-pw')" 
-                                  onmouseup="hidePassword('input-password', 'icon-pw')"
-                                  onmouseleave="hidePassword('input-password', 'icon-pw')"
-                                  ontouchstart="showPassword('input-password', 'icon-pw')"
-                                  ontouchend="hidePassword('input-password', 'icon-pw')">
-                                <i class="fa fa-eye" id="icon-pw"></i>
-                            </span>
+                    <?php if (!empty($error)) : ?>
+                        <div class="alert-error"><i class="fa fa-exclamation-triangle"></i> <?php echo $error; ?></div>
+                    <?php endif; ?>
+                    
+                    <form action="" method="POST">
+                        <div class="input-group">
+                            <label>Nomor Anggota / Telepon</label>
+                            <div class="input-wrapper">
+                                <span class="icon"><i class="fa fa-id-card"></i></span>
+                                <input type="text" name="username" placeholder="Masukkan No Anggota / Telepon" value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>" required>
+                            </div>
                         </div>
-                    </div>
+                        
+                        <div class="input-group" style="margin-bottom: 8px;">
+                            <label>Password</label>
+                            <div class="input-wrapper">
+                                <span class="icon"><i class="fa fa-lock"></i></span>
+                                <input type="password" name="password" id="input-password" placeholder="Masukkan Password" required>
+                                
+                                <span class="icon-toggle" 
+                                      onmousedown="showPassword('input-password', 'icon-pw')" 
+                                      onmouseup="hidePassword('input-password', 'icon-pw')"
+                                      onmouseleave="hidePassword('input-password', 'icon-pw')"
+                                      ontouchstart="showPassword('input-password', 'icon-pw')"
+                                      ontouchend="hidePassword('input-password', 'icon-pw')">
+                                    <i class="fa fa-eye" id="icon-pw"></i>
+                                </span>
+                            </div>
+                        </div>
 
-                    <div style="text-align: right; margin-bottom: 25px;">
-                        <a href="https://wa.me/6287772666425?text=Halo%20Admin,%20saya%20lupa%20password%20akun%20Bank%20Sampah%20saya.%20Mohon%20bantuannya." target="_blank" style="color: #1abc9c; font-size: 14px; text-decoration: none; font-weight: bold; transition: 0.2s;">Lupa Password?</a>
-                    </div>
+                        <div style="text-align: right; margin-bottom: 25px;">
+                            <a href="https://wa.me/6287772666425?text=Halo%20Admin,%20saya%20lupa%20password%20akun%20Bank%20Sampah%20saya.%20Mohon%20bantuannya." target="_blank" style="color: #1abc9c; font-size: 14px; text-decoration: none; font-weight: bold; transition: 0.2s;">Lupa Password?</a>
+                        </div>
+                        
+                        <button type="submit" name="submit_login" class="btn-login">MASUK</button>
+                    </form>
                     
-                    <button type="submit" name="submit_login" class="btn-login">MASUK</button>
-                </form>
-                
-                <div class="link-registrasi">
-                    Belum punya akun? <a href="registrasi.php">Daftar Nasabah Baru</a>
+                    <div class="link-registrasi">
+                        Belum punya akun? <a href="registrasi.php">Daftar Nasabah Baru</a>
+                    </div>
                 </div>
             </div>
         </div>
