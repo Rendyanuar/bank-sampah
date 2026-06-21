@@ -404,7 +404,9 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
                                     if ($status_db == 'pending' || $status_db == 'menunggu') {
                                         echo "<div class='action-buttons-stack'>";
                                         echo "<a href='transaksi_tarik.php?aksi=setujui&id=" . $row['id'] . "' class='btn-approve'><i class='fa fa-check'></i> Setujui</a>";
-                                        echo "<a href='transaksi_tarik.php?aksi=tolak&id=" . $row['id'] . "' class='btn-reject' onclick='return confirm(\"Tolak penarikan ini? Saldo akan dikembalikan ke nasabah.\")'><i class='fa fa-times'></i> Tolak</a>";
+                                        
+                                        // MENGGANTI CONFIRM DEFAULT MENJADI PEMANGGILAN FUNGSI MODAL TOLAK JS
+                                        echo "<a href='javascript:void(0);' onclick='showTolakModal(" . $row['id'] . ", \"" . htmlspecialchars(addslashes($row['nama_lengkap'])) . "\")' class='btn-reject'><i class='fa fa-times'></i> Tolak</a>";
                                         echo "</div>";
                                     } elseif ($status_db == 'disetujui') {
                                         echo "<div class='action-buttons-stack'>";
@@ -438,6 +440,22 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
                 <div class="modal-buttons">
                     <button class="btn-cancel" onclick="closeLogoutModal()">Batal</button>
                     <button class="btn-confirm-red" onclick="window.location.href='logout.php'">Ya, Keluar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tolakModal" class="modal-overlay">
+        <div class="modal-box modal-box-small">
+            <div class="modal-header-red">
+                <i class="fa fa-times-circle"></i>
+            </div>
+            <div class="modal-body">
+                <h3>Tolak Penarikan</h3>
+                <p>Apakah Anda yakin ingin menolak penarikan dana dari <strong id="namaNasabahTolak"></strong>? <br><br> Saldo akan dikembalikan secara otomatis.</p>
+                <div class="modal-buttons">
+                    <button class="btn-cancel" onclick="closeTolakModal()">Batal</button>
+                    <button class="btn-confirm-red" onclick="executeTolak()">Ya, Tolak</button>
                 </div>
             </div>
         </div>
@@ -521,7 +539,24 @@ $notif_tarik = mysqli_fetch_assoc($q_notif_tarik)['total'];
         setTimeout(function() { window.location.href = clean_url; }, 100);
     }
 
-    // --- FUNGSI MODAL VERIFIKASI SELESAI (TANPA CEK SALDO ADMIN) ---
+    // --- FUNGSI MODAL TOLAK (FUNGSI BARU) ---
+    let idTolakAktif = "";
+
+    function showTolakModal(id, nama) {
+        idTolakAktif = 'transaksi_tarik.php?aksi=tolak&id=' + id;
+        document.getElementById('namaNasabahTolak').innerText = nama;
+        document.getElementById('tolakModal').style.display = 'flex';
+    }
+
+    function closeTolakModal() {
+        document.getElementById('tolakModal').style.display = 'none';
+    }
+
+    function executeTolak() {
+        window.location.href = idTolakAktif;
+    }
+
+    // --- FUNGSI MODAL VERIFIKASI SELESAI ---
     let idTransaksiAktif = "";
 
     function showVerifikasiModal(id, nominal, metode, tujuan, nama) {
