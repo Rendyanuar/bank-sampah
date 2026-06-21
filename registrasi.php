@@ -50,7 +50,11 @@ if (isset($_POST['submit_registrasi'])) {
     if (empty($username)) {
         $pesan = "<div class='alert-error'><i class='fa fa-exclamation-triangle'></i> Silakan klik tombol 'Buat Nomor Anggota Baru' terlebih dahulu!</div>";
     } 
-    // Validasi Password
+    // Validasi Minimal Password 6 Karakter (FITUR BARU)
+    else if (strlen($password) < 6) {
+        $pesan = "<div class='alert-error'><i class='fa fa-exclamation-triangle'></i> Password minimal harus terdiri dari 6 karakter!</div>";
+    }
+    // Validasi Password Cocok
     else if ($password !== $konfirmasi) {
         $pesan = "<div class='alert-error'><i class='fa fa-exclamation-triangle'></i> Password dan Konfirmasi Password tidak cocok!</div>";
     } 
@@ -404,7 +408,7 @@ if (isset($_POST['submit_registrasi'])) {
                             <label>Password</label>
                             <div class="input-wrapper">
                                 <span class="icon"><i class="fa fa-lock"></i></span>
-                                <input type="password" name="password" id="input-password" placeholder="Buat Password Anda" required>
+                                <input type="password" name="password" id="input-password" placeholder="Minimal 6 Karakter" required minlength="6">
                                 
                                 <span class="icon-toggle" 
                                       onmousedown="showPassword('input-password', 'icon-pw')" 
@@ -421,7 +425,7 @@ if (isset($_POST['submit_registrasi'])) {
                             <label>Konfirmasi Password</label>
                             <div class="input-wrapper">
                                 <span class="icon"><i class="fa fa-lock"></i></span>
-                                <input type="password" name="konfirmasi_password" id="input-konfirmasi" placeholder="Ketik Ulang Password Anda" required>
+                                <input type="password" name="konfirmasi_password" id="input-konfirmasi" placeholder="Ketik Ulang Password Anda" required minlength="6">
                                 
                                 <span class="icon-toggle" 
                                       onmousedown="showPassword('input-konfirmasi', 'icon-konfirm')" 
