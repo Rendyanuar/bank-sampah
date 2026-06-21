@@ -45,7 +45,7 @@ if (isset($_GET['hapus'])) {
 }
 
 // ==================================================================
-// FITUR TARIK SALDO MANUAL (OTOMATIS POTONG KAS ADMIN)
+// FITUR TARIK SALDO MANUAL (HANYA POTONG SALDO NASABAH)
 // ==================================================================
 if (isset($_POST['tarik_saldo_admin'])) {
     $uname_nasabah = mysqli_real_escape_string($koneksi, $_POST['uname_nasabah']);
@@ -55,14 +55,8 @@ if (isset($_POST['tarik_saldo_admin'])) {
     $data_s = mysqli_fetch_assoc($cek_s);
     $saldo_sekarang = (int)$data_s['saldo'];
 
-    // CEK SALDO KAS ADMIN SAAT INI
-    $cek_admin = mysqli_query($koneksi, "SELECT saldo FROM users WHERE role = 'admin' LIMIT 1");
-    $saldo_admin_sekarang = (int)mysqli_fetch_assoc($cek_admin)['saldo'];
-
     if ($nominal > $saldo_sekarang) {
         $pesan_error = "Gagal! Nominal penarikan (Rp " . number_format($nominal, 0, ',', '.') . ") melebihi sisa saldo nasabah (Rp " . number_format($saldo_sekarang, 0, ',', '.') . ").";
-    } elseif ($nominal > $saldo_admin_sekarang) {
-        $pesan_error = "Gagal! Saldo Kas Admin tidak cukup untuk pencairan ini (Sisa Kas: Rp " . number_format($saldo_admin_sekarang, 0, ',', '.') . "). Silakan Top Up Kas Admin.";
     } elseif ($nominal < 1000) {
         $pesan_error = "Gagal! Minimal penarikan adalah Rp 1.000.";
     } else {
@@ -70,13 +64,8 @@ if (isset($_POST['tarik_saldo_admin'])) {
                     VALUES ('$uname_nasabah', '$nominal', 'Tunai', 'Penarikan di Kantor', 'selesai')";
         
         if (mysqli_query($koneksi, $q_tarik)) {
-            // 1. Potong Saldo Nasabah
+            // 1. Potong Saldo Nasabah SAJA
             mysqli_query($koneksi, "UPDATE users SET saldo = saldo - $nominal WHERE username = '$uname_nasabah'");
-            // 2. Potong Saldo Kas Admin
-            mysqli_query($koneksi, "UPDATE users SET saldo = saldo - $nominal WHERE role = 'admin'");
-            // 3. Catat di Riwayat Kas Admin
-            $ket_kas = "Pencairan Tunai Nasabah: " . $data_s['nama_lengkap'];
-            mysqli_query($koneksi, "INSERT INTO riwayat_kas_admin (jenis_transaksi, nominal, keterangan) VALUES ('Keluar', '$nominal', '$ket_kas')");
 
             $tarik_sukses = true;
             $nama_transaksi = $data_s['nama_lengkap'];
@@ -222,7 +211,7 @@ $jumlah_halaman = ceil($total_data / $data_per_halaman);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px; /* Jarak ke bawah mengarah ke tabel */
+            margin-bottom: 20px;
             flex-wrap: wrap;
             gap: 15px;
         }
@@ -358,7 +347,6 @@ $jumlah_halaman = ceil($total_data / $data_per_halaman);
             <div class="card">
                 <div class="card-header">
                     <h2>Daftar Nasabah Terdaftar</h2>
-                    <!-- FITUR PENCARIAN -->
                     <input type="text" id="searchNasabah" class="search-box" onkeyup="searchTable()" placeholder="Cari Nama atau No. Anggota...">
                 </div>
 
@@ -366,21 +354,18 @@ $jumlah_halaman = ceil($total_data / $data_per_halaman);
                     <div class="alert-error"><i class="fa fa-exclamation-triangle"></i> <?php echo $pesan_error; ?></div>
                 <?php endif; ?>
                 
-                <!-- KOMPONEN TOMBOL PAGINASI DIPINDAHKAN KE ATAS TABEL -->
                 <?php if($total_data > 0): ?>
                 <div class="pagination-container" id="wadahPaginasi">
                     <div class="pagination-info">
                         Menampilkan <?php echo ($awal_data + 1); ?> - <?php echo min(($awal_data + $data_per_halaman), $total_data); ?> dari <b><?php echo $total_data; ?></b> nasabah
                     </div>
                     <ul class="pagination">
-                        <!-- Tombol Sebelumnya -->
                         <?php if($halaman_aktif > 1): ?>
                             <li><a href="?halaman=<?php echo $halaman_aktif - 1; ?>">&laquo; Seb</a></li>
                         <?php else: ?>
                             <li><a class="disabled">&laquo; Seb</a></li>
                         <?php endif; ?>
 
-                        <!-- Deretan Angka Halaman -->
                         <?php 
                         for($i = 1; $i <= $jumlah_halaman; $i++): 
                             if ($i == $halaman_aktif):
@@ -393,7 +378,6 @@ $jumlah_halaman = ceil($total_data / $data_per_halaman);
                         endfor; 
                         ?>
 
-                        <!-- Tombol Berikutnya -->
                         <?php if($halaman_aktif < $jumlah_halaman): ?>
                             <li><a href="?halaman=<?php echo $halaman_aktif + 1; ?>">Lanjut &raquo;</a></li>
                         <?php else: ?>
@@ -454,7 +438,6 @@ $jumlah_halaman = ceil($total_data / $data_per_halaman);
         </div>
     </div>
 
-    <!-- SEMUA MODAL TETAP SAMA TIDAK DIUBAH -->
     <div id="warningModal" class="modal-overlay" style="z-index: 10001;">
         <div class="modal-box modal-box-small">
             <div class="modal-header-orange"><i class="fa fa-exclamation-circle" style="font-size: 50px;"></i></div>
@@ -561,7 +544,7 @@ $jumlah_halaman = ceil($total_data / $data_per_halaman);
                 <p style="font-size:13px; line-height:1.4;">
                     <?php 
                     if ($hapus_sukses) echo "Data nasabah sukses dihapus.";
-                    if ($tarik_sukses) echo "Berhasil menarik Rp " . number_format($nominal_transaksi,0,',','.') . " untuk " . htmlspecialchars($nama_transaksi) . ".<br><b style='color:#e74c3c;'>(Saldo Kas Admin Otomatis Terpotong)</b>";
+                    if ($tarik_sukses) echo "Berhasil menarik Rp " . number_format($nominal_transaksi,0,',','.') . " untuk " . htmlspecialchars($nama_transaksi) . ".";
                     if ($tambah_sukses) echo "Berhasil menambah Rp " . number_format($nominal_transaksi,0,',','.') . " ke tabungan " . htmlspecialchars($nama_transaksi) . ".";
                     ?>
                 </p>
@@ -571,7 +554,6 @@ $jumlah_halaman = ceil($total_data / $data_per_halaman);
     </div>
     <?php endif; ?>
 
-    <!-- WADAH DATA PENUH UNTUK LIVE SEARCH (Disembunyikan) -->
     <table style="display:none;" id="tabelDataPenuh">
         <?php
         // Kueri tersembunyi untuk meload SEMUA data agar bisa dicari tanpa reload
