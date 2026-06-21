@@ -408,7 +408,7 @@ if (isset($_POST['submit_registrasi'])) {
                             <label>Password</label>
                             <div class="input-wrapper">
                                 <span class="icon"><i class="fa fa-lock"></i></span>
-                                <input type="password" name="password" id="input-password" placeholder="Minimal 6 Karakter" required minlength="6">
+                                <input type="password" name="password" id="input-password" placeholder="Buat Password Anda" required minlength="6">
                                 
                                 <span class="icon-toggle" 
                                       onmousedown="showPassword('input-password', 'icon-pw')" 
