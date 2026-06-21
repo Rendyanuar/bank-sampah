@@ -1,6 +1,7 @@
 <?php
 session_start();
 
+// Mencegah browser menyimpan cache halaman ini
 header("Cache-Control: no-cache, no-store, must-revalidate"); 
 header("Pragma: no-cache"); 
 header("Expires: 0"); 
@@ -167,8 +168,24 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
 
         .content { padding: 30px; flex: 1; overflow-y: auto; overflow-x: hidden; width: 100%; box-sizing: border-box; }
         .card { background-color: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; overflow: hidden;}
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee;}
+        
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; flex-wrap: wrap; gap: 15px;}
         .card-header h2 { margin: 0; color: #1abc9c; font-size: 22px;}
+        
+        /* SEARCH BOX STYLING */
+        .search-box { 
+            padding: 10px 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 6px; 
+            font-size: 13px; 
+            width: 100%; 
+            max-width: 300px; 
+            box-sizing: border-box; 
+            outline: none; 
+            transition: 0.3s; 
+        }
+        .search-box:focus { border-color: #1abc9c; box-shadow: 0 0 5px rgba(26,188,156,0.2); }
+
         .alert-error { background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; border: 1px solid #f5c6cb; }
 
         .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: block; }
@@ -224,6 +241,7 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
             .menu a span.menu-text { font-size: 15px; font-weight: normal;}
             .content { padding: 15px; }
             .card { padding: 20px; width: 100%; max-width: calc(100vw - 30px); }
+            .search-box { max-width: 100%; } /* Lebar full di HP */
             .table-responsive { overflow-x: auto !important; margin-top: 10px; border: 1px solid #f1f1f1; }
             .modal-box { width: 92%; max-width: 380px; }
         }
@@ -275,6 +293,7 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
             <div class="card">
                 <div class="card-header">
                     <h2>Daftar Nasabah Terdaftar</h2>
+                    <input type="text" id="searchNasabah" class="search-box" onkeyup="searchTable()" placeholder="Cari Nama atau No. Anggota...">
                 </div>
 
                 <?php if(!empty($pesan_error)): ?>
@@ -282,7 +301,7 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
                 <?php endif; ?>
                 
                 <div class="table-responsive">
-                    <table>
+                    <table id="tabelNasabah">
                         <thead>
                             <tr>
                                 <th>No</th>
@@ -295,7 +314,8 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
                         </thead>
                         <tbody>
                             <?php
-                            $query = "SELECT * FROM users WHERE role = 'nasabah' ORDER BY nama_lengkap ASC";
+                            // DIURUTKAN BERDASARKAN NOMOR ANGGOTA TERAWAL (ASCENDING)
+                            $query = "SELECT * FROM users WHERE role = 'nasabah' ORDER BY username ASC";
                             $result = mysqli_query($koneksi, $query);
                             $no = 1;
 
@@ -447,6 +467,32 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
     <?php endif; ?>
 
 <script>
+    // FITUR LIVE SEARCH
+    function searchTable() {
+        var input, filter, table, tr, tdNoAnggota, tdNama, i, txtValueNo, txtValueNama;
+        input = document.getElementById("searchNasabah");
+        filter = input.value.toUpperCase();
+        table = document.getElementById("tabelNasabah");
+        tr = table.getElementsByTagName("tr");
+
+        for (i = 1; i < tr.length; i++) {
+            tdNoAnggota = tr[i].getElementsByTagName("td")[1]; // Mengambil data kolom Nomor Anggota
+            tdNama = tr[i].getElementsByTagName("td")[2];      // Mengambil data kolom Nama Lengkap
+            
+            if (tdNoAnggota || tdNama) {
+                txtValueNo = tdNoAnggota.textContent || tdNoAnggota.innerText;
+                txtValueNama = tdNama.textContent || tdNama.innerText;
+                
+                // Mencocokkan inputan dengan Nama ATAU Nomor Anggota
+                if (txtValueNo.toUpperCase().indexOf(filter) > -1 || txtValueNama.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }       
+        }
+    }
+
     function toggleMobileMenu() {
         const sidebar = document.getElementById('sidebarMenu');
         const overlay = document.getElementById('sidebarOverlay');
@@ -469,6 +515,7 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
     }
     function showLogoutModal() { document.getElementById('logoutModal').style.display = 'flex'; }
     function closeLogoutModal() { document.getElementById('logoutModal').style.display = 'none'; }
+    
     function showTambahModal(username, namaLengkap) {
         document.getElementById('input_uname_tambah').value = username;
         document.getElementById('display_nama_tambah').innerText = namaLengkap;
@@ -493,18 +540,16 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
     }
     function closeTarikModal() { document.getElementById('tarikModal').style.display = 'none'; }
     
-    // LOGIKA VALIDASI JS UNTUK PENARIKAN SALDO BERLEBIH
     function validasiTarik(e) {
         let inputNominal = parseInt(document.getElementById('input_nominal_tarik').value);
         let maxSaldo = parseInt(document.getElementById('input_nominal_tarik').max);
         
         if (inputNominal > maxSaldo) {
-            e.preventDefault(); // Hentikan form agar tidak me-refresh / submit ke PHP
+            e.preventDefault(); 
             
             let rupiahMax = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(maxSaldo);
             let rupiahReq = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(inputNominal);
             
-            // Tutup form penarikan dan tampilkan Modal Peringatan
             document.getElementById('tarikModal').style.display = 'none';
             document.getElementById('warningTitle').innerText = "Saldo Tidak Cukup!";
             document.getElementById('warningText').innerHTML = "Gagal memproses <b>" + rupiahReq + "</b>.<br>Sisa saldo nasabah hanya <b>" + rupiahMax + "</b>.";
