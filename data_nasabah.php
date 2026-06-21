@@ -217,12 +217,12 @@ $jumlah_halaman = ceil($total_data / $data_per_halaman);
         .btn-delete { background-color: #e74c3c; }
         .btn-edit:hover, .btn-tambah:hover, .btn-tarik:hover, .btn-delete:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.2);}
 
-        /* STYLING PAGINASI */
+        /* STYLING PAGINASI DIUBAH MARGINNYA AGAR COCOK DI ATAS */
         .pagination-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 25px;
+            margin-bottom: 20px; /* Jarak ke bawah mengarah ke tabel */
             flex-wrap: wrap;
             gap: 15px;
         }
@@ -358,6 +358,7 @@ $jumlah_halaman = ceil($total_data / $data_per_halaman);
             <div class="card">
                 <div class="card-header">
                     <h2>Daftar Nasabah Terdaftar</h2>
+                    <!-- FITUR PENCARIAN -->
                     <input type="text" id="searchNasabah" class="search-box" onkeyup="searchTable()" placeholder="Cari Nama atau No. Anggota...">
                 </div>
 
@@ -365,6 +366,43 @@ $jumlah_halaman = ceil($total_data / $data_per_halaman);
                     <div class="alert-error"><i class="fa fa-exclamation-triangle"></i> <?php echo $pesan_error; ?></div>
                 <?php endif; ?>
                 
+                <!-- KOMPONEN TOMBOL PAGINASI DIPINDAHKAN KE ATAS TABEL -->
+                <?php if($total_data > 0): ?>
+                <div class="pagination-container" id="wadahPaginasi">
+                    <div class="pagination-info">
+                        Menampilkan <?php echo ($awal_data + 1); ?> - <?php echo min(($awal_data + $data_per_halaman), $total_data); ?> dari <b><?php echo $total_data; ?></b> nasabah
+                    </div>
+                    <ul class="pagination">
+                        <!-- Tombol Sebelumnya -->
+                        <?php if($halaman_aktif > 1): ?>
+                            <li><a href="?halaman=<?php echo $halaman_aktif - 1; ?>">&laquo; Seb</a></li>
+                        <?php else: ?>
+                            <li><a class="disabled">&laquo; Seb</a></li>
+                        <?php endif; ?>
+
+                        <!-- Deretan Angka Halaman -->
+                        <?php 
+                        for($i = 1; $i <= $jumlah_halaman; $i++): 
+                            if ($i == $halaman_aktif):
+                        ?>
+                            <li><a href="?halaman=<?php echo $i; ?>" class="active"><?php echo $i; ?></a></li>
+                        <?php else: ?>
+                            <li><a href="?halaman=<?php echo $i; ?>"><?php echo $i; ?></a></li>
+                        <?php 
+                            endif;
+                        endfor; 
+                        ?>
+
+                        <!-- Tombol Berikutnya -->
+                        <?php if($halaman_aktif < $jumlah_halaman): ?>
+                            <li><a href="?halaman=<?php echo $halaman_aktif + 1; ?>">Lanjut &raquo;</a></li>
+                        <?php else: ?>
+                            <li><a class="disabled">Lanjut &raquo;</a></li>
+                        <?php endif; ?>
+                    </ul>
+                </div>
+                <?php endif; ?>
+
                 <div class="table-responsive">
                     <table id="tabelNasabah">
                         <thead>
@@ -411,44 +449,12 @@ $jumlah_halaman = ceil($total_data / $data_per_halaman);
                         </tbody>
                     </table>
                 </div>
-
-                <?php if($total_data > 0): ?>
-                <div class="pagination-container" id="wadahPaginasi">
-                    <div class="pagination-info">
-                        Menampilkan <?php echo ($awal_data + 1); ?> - <?php echo min(($awal_data + $data_per_halaman), $total_data); ?> dari <b><?php echo $total_data; ?></b> nasabah
-                    </div>
-                    <ul class="pagination">
-                        <?php if($halaman_aktif > 1): ?>
-                            <li><a href="?halaman=<?php echo $halaman_aktif - 1; ?>">&laquo; Seb</a></li>
-                        <?php else: ?>
-                            <li><a class="disabled">&laquo; Seb</a></li>
-                        <?php endif; ?>
-
-                        <?php 
-                        for($i = 1; $i <= $jumlah_halaman; $i++): 
-                            if ($i == $halaman_aktif):
-                        ?>
-                            <li><a href="?halaman=<?php echo $i; ?>" class="active"><?php echo $i; ?></a></li>
-                        <?php else: ?>
-                            <li><a href="?halaman=<?php echo $i; ?>"><?php echo $i; ?></a></li>
-                        <?php 
-                            endif;
-                        endfor; 
-                        ?>
-
-                        <?php if($halaman_aktif < $jumlah_halaman): ?>
-                            <li><a href="?halaman=<?php echo $halaman_aktif + 1; ?>">Lanjut &raquo;</a></li>
-                        <?php else: ?>
-                            <li><a class="disabled">Lanjut &raquo;</a></li>
-                        <?php endif; ?>
-                    </ul>
-                </div>
-                <?php endif; ?>
                 
             </div>
         </div>
     </div>
 
+    <!-- SEMUA MODAL TETAP SAMA TIDAK DIUBAH -->
     <div id="warningModal" class="modal-overlay" style="z-index: 10001;">
         <div class="modal-box modal-box-small">
             <div class="modal-header-orange"><i class="fa fa-exclamation-circle" style="font-size: 50px;"></i></div>
@@ -565,6 +571,7 @@ $jumlah_halaman = ceil($total_data / $data_per_halaman);
     </div>
     <?php endif; ?>
 
+    <!-- WADAH DATA PENUH UNTUK LIVE SEARCH (Disembunyikan) -->
     <table style="display:none;" id="tabelDataPenuh">
         <?php
         // Kueri tersembunyi untuk meload SEMUA data agar bisa dicari tanpa reload
