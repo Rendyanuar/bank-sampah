@@ -122,6 +122,22 @@ $q_foto = mysqli_query($koneksi, "SELECT foto_profil FROM users WHERE username =
 $d_foto = mysqli_fetch_assoc($q_foto);
 $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profil/' . $d_foto['foto_profil'])) 
                     ? 'assets/profil/' . $d_foto['foto_profil'] : 'https://ui-avatars.com/api/?name=' . urlencode($_SESSION['nama']) . '&background=1abc9c&color=fff';
+
+// ==================================================================
+// KONFIGURASI PAGINASI (HALAMAN)
+// ==================================================================
+$data_per_halaman = 10; // Jumlah data yang ditampilkan per halaman
+$halaman_aktif = (isset($_GET['halaman']) && is_numeric($_GET['halaman'])) ? (int)$_GET['halaman'] : 1;
+$awal_data = ($halaman_aktif - 1) * $data_per_halaman;
+
+// Hitung total data nasabah keseluruhan
+$query_total = "SELECT COUNT(*) AS total_data FROM users WHERE role = 'nasabah'";
+$hasil_total = mysqli_query($koneksi, $query_total);
+$row_total = mysqli_fetch_assoc($hasil_total);
+$total_data = $row_total['total_data'];
+
+// Hitung jumlah halaman yang dibutuhkan
+$jumlah_halaman = ceil($total_data / $data_per_halaman);
 ?>
 
 <!DOCTYPE html>
@@ -201,6 +217,53 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
         .btn-delete { background-color: #e74c3c; }
         .btn-edit:hover, .btn-tambah:hover, .btn-tarik:hover, .btn-delete:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.2);}
 
+        /* STYLING PAGINASI */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .pagination-info {
+            font-size: 13px;
+            color: #7f8c8d;
+        }
+        .pagination {
+            display: flex;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            gap: 5px;
+        }
+        .pagination a {
+            color: #34495e;
+            padding: 8px 14px;
+            text-decoration: none;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: 0.2s;
+            background-color: white;
+        }
+        .pagination a.active {
+            background-color: #1abc9c;
+            color: white;
+            border-color: #1abc9c;
+        }
+        .pagination a:hover:not(.active) {
+            background-color: #f1fcf9;
+            color: #1abc9c;
+            border-color: #1abc9c;
+        }
+        .pagination a.disabled {
+            color: #ccc;
+            pointer-events: none;
+            background-color: #f9f9f9;
+        }
+
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.6); z-index: 9999; justify-content: center; align-items: center; }
         .modal-box { background: #fff; width: 400px; border-radius: 16px; overflow: hidden; text-align: center; animation: popIn 0.3s ease-out; }
         .modal-box-small { width: 320px !important;}
@@ -244,6 +307,8 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
             .search-box { max-width: 100%; } /* Lebar full di HP */
             .table-responsive { overflow-x: auto !important; margin-top: 10px; border: 1px solid #f1f1f1; }
             .modal-box { width: 92%; max-width: 380px; }
+            .pagination-container { flex-direction: column; align-items: center; }
+            .pagination { flex-wrap: wrap; justify-content: center;}
         }
     </style>
 </head>
@@ -312,12 +377,12 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
                                 <th style="text-align:center;">Aksi Pengelolaan</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="tbodyNasabah">
                             <?php
-                            // DIURUTKAN BERDASARKAN NOMOR ANGGOTA TERAWAL (ASCENDING)
-                            $query = "SELECT * FROM users WHERE role = 'nasabah' ORDER BY username ASC";
+                            // DIURUTKAN BERDASARKAN NOMOR ANGGOTA TERAWAL (ASCENDING) BESERTA LIMIT HALAMAN
+                            $query = "SELECT * FROM users WHERE role = 'nasabah' ORDER BY username ASC LIMIT $awal_data, $data_per_halaman";
                             $result = mysqli_query($koneksi, $query);
-                            $no = 1;
+                            $no = $awal_data + 1; // Penomoran urut sesuai halaman
 
                             if (mysqli_num_rows($result) > 0) {
                                 while ($row = mysqli_fetch_assoc($result)) {
@@ -325,10 +390,10 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
                                     $uname_js = htmlspecialchars($row['username'], ENT_QUOTES);
                                     $nama_js = htmlspecialchars($row['nama_lengkap'], ENT_QUOTES);
                                     
-                                    echo "<tr>";
+                                    echo "<tr class='row-nasabah'>";
                                     echo "<td>" . $no++ . "</td>";
-                                    echo "<td><b>" . htmlspecialchars($row['username']) . "</b></td>";
-                                    echo "<td>" . htmlspecialchars($row['nama_lengkap']) . "</td>";
+                                    echo "<td class='kolom-nomor'><b>" . htmlspecialchars($row['username']) . "</b></td>";
+                                    echo "<td class='kolom-nama'>" . htmlspecialchars($row['nama_lengkap']) . "</td>";
                                     echo "<td>" . (!empty($row['nomor_telepon']) ? htmlspecialchars($row['nomor_telepon']) : "-") . "</td>";
                                     echo "<td style='color:#27ae60; font-weight:bold;'>Rp " . number_format($saldo_tampil, 0, ',', '.') . "</td>";
                                     echo "<td style='text-align:center;'>
@@ -340,12 +405,46 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
                                     echo "</tr>";
                                 }
                             } else {
-                                echo "<tr><td colspan='6' style='text-align:center; padding:20px; color:#7f8c8d;'>Belum ada data nasabah.</td></tr>";
+                                echo "<tr id='rowKosong'><td colspan='6' style='text-align:center; padding:20px; color:#7f8c8d;'>Belum ada data nasabah.</td></tr>";
                             }
                             ?>
                         </tbody>
                     </table>
                 </div>
+
+                <?php if($total_data > 0): ?>
+                <div class="pagination-container" id="wadahPaginasi">
+                    <div class="pagination-info">
+                        Menampilkan <?php echo ($awal_data + 1); ?> - <?php echo min(($awal_data + $data_per_halaman), $total_data); ?> dari <b><?php echo $total_data; ?></b> nasabah
+                    </div>
+                    <ul class="pagination">
+                        <?php if($halaman_aktif > 1): ?>
+                            <li><a href="?halaman=<?php echo $halaman_aktif - 1; ?>">&laquo; Seb</a></li>
+                        <?php else: ?>
+                            <li><a class="disabled">&laquo; Seb</a></li>
+                        <?php endif; ?>
+
+                        <?php 
+                        for($i = 1; $i <= $jumlah_halaman; $i++): 
+                            if ($i == $halaman_aktif):
+                        ?>
+                            <li><a href="?halaman=<?php echo $i; ?>" class="active"><?php echo $i; ?></a></li>
+                        <?php else: ?>
+                            <li><a href="?halaman=<?php echo $i; ?>"><?php echo $i; ?></a></li>
+                        <?php 
+                            endif;
+                        endfor; 
+                        ?>
+
+                        <?php if($halaman_aktif < $jumlah_halaman): ?>
+                            <li><a href="?halaman=<?php echo $halaman_aktif + 1; ?>">Lanjut &raquo;</a></li>
+                        <?php else: ?>
+                            <li><a class="disabled">Lanjut &raquo;</a></li>
+                        <?php endif; ?>
+                    </ul>
+                </div>
+                <?php endif; ?>
+                
             </div>
         </div>
     </div>
@@ -466,30 +565,76 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
     </div>
     <?php endif; ?>
 
+    <table style="display:none;" id="tabelDataPenuh">
+        <?php
+        // Kueri tersembunyi untuk meload SEMUA data agar bisa dicari tanpa reload
+        $q_full = "SELECT * FROM users WHERE role = 'nasabah' ORDER BY username ASC";
+        $r_full = mysqli_query($koneksi, $q_full);
+        $no_full = 1;
+        while ($rf = mysqli_fetch_assoc($r_full)) {
+            $s_tampil = $rf['saldo'] ? $rf['saldo'] : 0;
+            $u_js = htmlspecialchars($rf['username'], ENT_QUOTES);
+            $n_js = htmlspecialchars($rf['nama_lengkap'], ENT_QUOTES);
+            
+            echo "<tr class='row-full'>";
+            echo "<td>" . $no_full++ . "</td>";
+            echo "<td class='kolom-nomor-full'><b>" . htmlspecialchars($rf['username']) . "</b></td>";
+            echo "<td class='kolom-nama-full'>" . htmlspecialchars($rf['nama_lengkap']) . "</td>";
+            echo "<td>" . (!empty($rf['nomor_telepon']) ? htmlspecialchars($rf['nomor_telepon']) : "-") . "</td>";
+            echo "<td style='color:#27ae60; font-weight:bold;'>Rp " . number_format($s_tampil, 0, ',', '.') . "</td>";
+            echo "<td style='text-align:center;'>
+                    <a href='edit_nasabah.php?username=" . urlencode($rf['username']) . "' class='btn-action btn-edit' title='Edit Profil'><i class='fa fa-user-edit'></i></a>
+                    <a href='javascript:void(0);' onclick='showTambahModal(\"{$u_js}\", \"{$n_js}\")' class='btn-action btn-tambah'><i class='fa fa-plus-circle'></i></a>
+                    <a href='javascript:void(0);' onclick='showTarikModal(\"{$u_js}\", \"{$n_js}\", {$s_tampil})' class='btn-action btn-tarik'><i class='fa fa-money-bill-wave'></i></a>
+                    <a href='javascript:void(0);' onclick='showDeleteModal(\"{$u_js}\")' class='btn-action btn-delete'><i class='fa fa-trash'></i></a>
+                  </td>";
+            echo "</tr>";
+        }
+        ?>
+    </table>
+
 <script>
-    // FITUR LIVE SEARCH
+    // FITUR LIVE SEARCH (DIADAPTASI UNTUK PAGINASI)
     function searchTable() {
-        var input, filter, table, tr, tdNoAnggota, tdNama, i, txtValueNo, txtValueNama;
+        var input, filter, tbodyAsli, wadahPaginasi, tabelPenuh, barisPenuh, tdNo, tdNama, i, txtNo, txtNama, countMatch;
         input = document.getElementById("searchNasabah");
         filter = input.value.toUpperCase();
-        table = document.getElementById("tabelNasabah");
-        tr = table.getElementsByTagName("tr");
+        
+        tbodyAsli = document.getElementById("tbodyNasabah");
+        wadahPaginasi = document.getElementById("wadahPaginasi");
+        
+        tabelPenuh = document.getElementById("tabelDataPenuh");
+        barisPenuh = tabelPenuh.getElementsByClassName("row-full");
 
-        for (i = 1; i < tr.length; i++) {
-            tdNoAnggota = tr[i].getElementsByTagName("td")[1]; // Mengambil data kolom Nomor Anggota
-            tdNama = tr[i].getElementsByTagName("td")[2];      // Mengambil data kolom Nama Lengkap
+        // Jika kotak pencarian kosong, kembalikan ke mode paginasi (halaman aktif)
+        if (filter.trim() === "") {
+            window.location.reload(); 
+            return;
+        }
+
+        // Jika ada ketikan, sembunyikan paginasi dan ganti isi tbody dengan seluruh data yang cocok
+        if(wadahPaginasi) wadahPaginasi.style.display = "none";
+        tbodyAsli.innerHTML = ""; 
+        countMatch = 0;
+
+        for (i = 0; i < barisPenuh.length; i++) {
+            tdNo = barisPenuh[i].getElementsByClassName("kolom-nomor-full")[0];
+            tdNama = barisPenuh[i].getElementsByClassName("kolom-nama-full")[0];
             
-            if (tdNoAnggota || tdNama) {
-                txtValueNo = tdNoAnggota.textContent || tdNoAnggota.innerText;
-                txtValueNama = tdNama.textContent || tdNama.innerText;
+            if (tdNo || tdNama) {
+                txtNo = tdNo.textContent || tdNo.innerText;
+                txtNama = tdNama.textContent || tdNama.innerText;
                 
-                // Mencocokkan inputan dengan Nama ATAU Nomor Anggota
-                if (txtValueNo.toUpperCase().indexOf(filter) > -1 || txtValueNama.toUpperCase().indexOf(filter) > -1) {
-                    tr[i].style.display = "";
-                } else {
-                    tr[i].style.display = "none";
+                if (txtNo.toUpperCase().indexOf(filter) > -1 || txtNama.toUpperCase().indexOf(filter) > -1) {
+                    // Klon baris dari tabel tersembunyi ke tabel utama yang dilihat user
+                    tbodyAsli.appendChild(barisPenuh[i].cloneNode(true));
+                    countMatch++;
                 }
             }       
+        }
+        
+        if (countMatch === 0) {
+            tbodyAsli.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:20px; color:#e74c3c; font-weight:bold;'>Data tidak ditemukan.</td></tr>";
         }
     }
 
@@ -568,7 +713,7 @@ $path_foto_header = (!empty($d_foto['foto_profil']) && file_exists('assets/profi
     function executeDelete() { window.location.href = deleteTargetUrl; }
     function closeSuccessModal() {
         document.getElementById('successModal').style.display = 'none';
-        window.history.pushState({}, document.title, 'data_nasabah.php');
+        window.history.pushState({}, document.title, window.location.pathname);
     }
 </script>
 </body>
